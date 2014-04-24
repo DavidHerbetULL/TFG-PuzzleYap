@@ -14,6 +14,7 @@
       };
   }());
   
+  // Espacio de nombres (namespace) del juego
   var PUZZLEYAP = {
 
     // Tamaño del canvas
@@ -35,6 +36,37 @@
       PUZZLEYAP.ctx.fillRect(0, 0, PUZZLEYAP.canvas.width, PUZZLEYAP.canvas.height);
       document.body.appendChild(PUZZLEYAP.canvas);
       
+      // Entidades u Objetos del juego
+      PUZZLEYAP.gameObjects = [];
+
+      // listen for clicks
+      window.addEventListener('click', function (e) {
+        e.preventDefault();
+        PUZZLEYAP.Input.set(e);
+      }, false);
+
+      // Eventos de tocar (touch) para móviles
+      window.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        // El objeto de evento tiene un array llamado
+        // touches. Solo se requiere el primer toque,
+        // el cual pasaremos como input
+        PUZZLEYAP.Input.set(e.touches[0]);
+      }, false);
+
+      window.addEventListener('touchmove', function (e) {
+        // No es necesario de momento pero por si acaso
+        // prevenimos su comportamiento por defecto
+        e.preventDefault();
+      }, false);
+
+      window.addEventListener('touchend', function (e) {
+        e.preventDefault();
+        // Reiniciamos las propiedades del input una vez
+        // finalizado el toque
+        PUZZLEYAP.Input.unset();
+      }, false);
+
       // Comienza a ejecutar el bucle del juego
       PUZZLEYAP.loop();
     },
@@ -53,6 +85,29 @@
       
       PUZZLEYAP.update();
       PUZZLEYAP.render();
+    }
+
+  };
+
+  // Objeto de entrada (input) para manejar los toques
+  PUZZLEYAP.Input = {
+
+    x: 0,
+    y: 0,
+    tapped: false,
+
+    set: function (data) {
+      this.x = data.pageX;
+      this.y = data.pageY;
+      this.tapped = true;
+
+      PUZZLEYAP.Draw.circle(this.x, this.y, 10, 'red');
+    },
+
+    unset: function () {
+      this.x = 0;
+      this.y = 0;
+      this.tapped = false;
     }
 
   };
