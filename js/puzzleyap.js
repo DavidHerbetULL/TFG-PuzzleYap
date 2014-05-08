@@ -228,6 +228,19 @@
     var aboutMenuButton = new PUZZLEYAP.UIObject.Button("Acerca de", x, y + 90, 160, 40);
     var exitMenuButton = new PUZZLEYAP.UIObject.Button("Salir", x, y + 160, 160, 40);
     
+    // MENU HANDLERS
+    playMenuButton.handler = function () {
+      PUZZLEYAP.Draw.text("Hello World 1", 40, 340, 20, "blue");
+    };
+    
+    aboutMenuButton.handler = function () {
+      PUZZLEYAP.Draw.text("Hello World 2", 40, 380, 20, "blue");
+    };
+    
+    exitMenuButton.handler = function () {
+      PUZZLEYAP.Draw.text("Hello World 3", 40, 420, 20, "blue");
+    };
+    
     this.menuElements.push(playMenuButton);
     this.menuElements.push(aboutMenuButton);
     this.menuElements.push(exitMenuButton);
