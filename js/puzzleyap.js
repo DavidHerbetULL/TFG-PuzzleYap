@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-
+  /*jslint nomen: true*/
   // Helper to provides requestAnimationFrame in a cross browser way.
   // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
   window.requestAnimationFrame = (function () {
@@ -13,6 +13,10 @@
         window.setTimeout(callback, 1000 / 60);
       };
   }());
+  
+  var isFunction = function (possibleFunction) {
+    return (typeof (possibleFunction) === typeof (Function));
+  };
   
   // Espacio de nombres (namespace) del juego
   var PUZZLEYAP = {
@@ -66,17 +70,37 @@
         // finalizado el toque
         PUZZLEYAP.Input.unset();
       }, false);
+      
+      var gameMenu = new PUZZLEYAP.Menu("P", 80, 80);
 
+      PUZZLEYAP.gameObjects.push(gameMenu);
+      
+      
       // Comienza a ejecutar el bucle del juego
       PUZZLEYAP.loop();
     },
 
     // Actualiza el estado la pantalla
-    update: function () {},
+    update: function () {
+      if (PUZZLEYAP.Input.tapped) {
+        _.each(PUZZLEYAP.gameObjects, function (obj) {
+          obj.update(PUZZLEYAP.Input);
+          PUZZLEYAP.Input.tapped = false;
+        });
+      } else {
+        _.each(PUZZLEYAP.gameObjects, function (obj) {
+          obj.update();
+        });
+      }
+      
+    },
 
     // Visualiza los cambios
     render: function () {
       PUZZLEYAP.Draw.text("PuzzleYap", 40, 40, 40, "Black");
+      _.each(PUZZLEYAP.gameObjects, function (obj) {
+        obj.draw();
+      });
     },
 
     // Bucle del juego
@@ -101,7 +125,6 @@
       this.y = data.pageY;
       this.tapped = true;
 
-      PUZZLEYAP.Draw.circle(this.x, this.y, 10, 'red');
     },
 
     unset: function () {
@@ -130,9 +153,107 @@
       PUZZLEYAP.ctx.fillText(string, x, y);
     }
   };
+  
+  // Interfaz de usuario
+  // -------------------
+  // Clase contenedora para los objetos de la interfaz de usuario
+  PUZZLEYAP.UIObject = {
+    intersects: function (object, touch) {
+      if (_.isUndefined(touch)) {
+        return false;
+      }
+      return (touch.x >= object.x) && (touch.x <= object.x + object.width) &&
+        (touch.y >= object.y) && (touch.y <= object.y + object.height);
+    },
+    updateStats: function (input) {
+      if (this.intersects(this, input) && input.tapped) {
+        this.touched = true;
+      } else {
+        this.touched = false;
+      }
+    }
+  };
+  
+  // Clase de botones para el juego
+  PUZZLEYAP.UIObject.Button = function (text, x, y, width, height) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.touched = false;
+    this.text = text;
+  };
 
+  PUZZLEYAP.UIObject.Button.prototype = _.extend(PUZZLEYAP.UIObject.Button.prototype,
+                                                 PUZZLEYAP.UIObject);
+  
+  PUZZLEYAP.UIObject.Button.prototype.update = function (input) {
+    var wasNotTouched = !this.touched;
+    this.updateStats(input);
+
+    if (this.touched && wasNotTouched) {
+      if (!_.isUndefined(this.handler)) {
+        this.handler();
+      }
+    }
+  };
+  
+  PUZZLEYAP.UIObject.Button.prototype.draw = function () {
+    //draw button
+    PUZZLEYAP.Draw.rect(this.x, this.y, this.width, this.height, "yellow");
+
+    //text options
+    var fontSize = 20,
+
+    //text position
+      textSize = PUZZLEYAP.ctx.measureText(this.text),
+      textX = this.x + (this.width / 2) - (textSize.width / 2),
+      textY = this.y + (this.height / 2) + (fontSize / 4);
+
+    //draw the text
+    PUZZLEYAP.Draw.text(this.text, textX, textY, fontSize, "black");
+  };
+  
+  // Pantalla de menú principal
+  PUZZLEYAP.Menu = function (title, x, y) {
+    this.menuElements = [];
+    this.showMainMenu = true;
+    this.setShowMainMenu = function (allowShow) {
+      this.showMainMenu = allowShow;
+    };
+    
+    // MENU OBJECTS
+    //var titleMenuElement;
+    var playMenuButton = new PUZZLEYAP.UIObject.Button("Jugar", x, y + 20, 160, 40);
+    var aboutMenuButton = new PUZZLEYAP.UIObject.Button("Acerca de", x, y + 90, 160, 40);
+    var exitMenuButton = new PUZZLEYAP.UIObject.Button("Salir", x, y + 160, 160, 40);
+    
+    this.menuElements.push(playMenuButton);
+    this.menuElements.push(aboutMenuButton);
+    this.menuElements.push(exitMenuButton);
+
+  };
+  
+  PUZZLEYAP.Menu.prototype.update = function (input) {
+    _.each(this.menuElements, function (element) {
+      if (isFunction(element.update)) {
+        element.update(input);
+      }
+    });
+  };
+  
+  PUZZLEYAP.Menu.prototype.draw = function () {
+    if (this.showMainMenu) {
+      _.each(this.menuElements, function (element) {
+        element.draw();
+      });
+    } else {
+      //render about section
+    }
+  };
+  
+  // Inicializa el juego cuando esté todo listo
   window.onload = function () {
-    // Inicializa el juego cuando esté todo listo
     PUZZLEYAP.init();
   };
   
