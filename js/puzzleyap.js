@@ -3,18 +3,6 @@
 
 (function () {
   "use strict";
-  // Helper to provides requestAnimationFrame in a cross browser way.
-  // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
-  window.requestAnimationFrame = (function () {
-    return window.webkitRequestAnimationFrame ||
-      window.mozRequestAnimationFrame ||
-      window.oRequestAnimationFrame ||
-      window.msRequestAnimationFrame ||
-      // function FrameRequestCallback, DOM Element
-      function (callback, element) {
-        window.setTimeout(callback, 1000 / 60);
-      };
-  }());
   
   var isFunction = function (possibleFunction) {
     return (typeof (possibleFunction) === typeof (Function));
@@ -107,7 +95,7 @@
 
     // Bucle del juego
     loop: function () {
-      window.requestAnimationFrame(PUZZLEYAP.loop);
+      window.requestAnimFrame(PUZZLEYAP.loop);
       
       PUZZLEYAP.update();
       PUZZLEYAP.render();
