@@ -1,6 +1,8 @@
+/*jslint nomen: true, browser: true, devel: true*/
+/*global _*/
+
 (function () {
   "use strict";
-  /*jslint nomen: true*/
   // Helper to provides requestAnimationFrame in a cross browser way.
   // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
   window.requestAnimationFrame = (function () {
