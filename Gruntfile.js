@@ -23,7 +23,7 @@ module.exports = function (grunt) {
 
     copy: {
       main: {
-        src: ['index.html', 'css/*', 'resources/*'],
+        src: ['index.html', 'resources/**/*'],
         dest: 'build/'
       }
     },
@@ -48,7 +48,7 @@ module.exports = function (grunt) {
     },
 
     watch: {
-      files: ['index.html', 'css/*', 'resources/*', 'js/**/*'],
+      files: ['index.html', 'resources/**/*', 'js/**/*'],
       tasks: ['uglify', 'copy', 'compress']
     }
 
@@ -62,6 +62,10 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   // Default task(s).
-  grunt.registerTask('default', ['uglify', 'copy', 'compress', 'clean']);
+  grunt.registerTask('default', ['uglify', 'copy', 'compress']);
+  grunt.registerTask('uglifyFiles', ['uglify']);
+  grunt.registerTask('copyFiles', ['copy']);
+  grunt.registerTask('compressFiles', ['compress']);
+  grunt.registerTask('cleanBuild', ['clean']);
 
 };
