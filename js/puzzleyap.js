@@ -407,11 +407,16 @@
         // Nota: al crear un dialogo con alert no se llega a realizar el
         // event listener de mouseup
         PUZZLEYAP.gameMode.pop();
-        PUZZLEYAP.gameMode.push(new PUZZLEYAP.RenderImageState());
+        PUZZLEYAP.gameMode.push(new PUZZLEYAP.CaptureImageState());
       };
 
       exitMenuButton.handler = function () {
-        CocoonJS.App.forceToFinish();
+        //CocoonJS.App.forceToFinish();
+        var waca = CocoonJS.App.showMessageBox("Salir de Puzzleyap", "¿Desea realmente salir de la aplicación?", "Aceptar", "Cancelar");
+        CocoonJS.App.onMessageBoxConfirmed.addEventListener(function () {
+          PUZZLEYAP.Input.unsetTapped();
+          CocoonJS.App.forceToFinish();
+        });
       };
 
       this.stateElements.push(playMenuButton);
@@ -440,18 +445,18 @@
 
   };
 
-  PUZZLEYAP.RenderImageState = function () {
+  PUZZLEYAP.CaptureImageState = function () {
     this.stateElements = [];
-    this.name = "Renderizar imagen";
+    this.name = "Capturar imagen";
 
     this.onEnter = function () {
-      console.log("Entrando en: RenderImageState");
+      console.log("Entrando en: CaptureImageState");
       var buttonWidth = PUZZLEYAP.WIDTH / 2 + PUZZLEYAP.WIDTH / 8,
         buttonHeight = PUZZLEYAP.HEIGHT / 12,
         buttonX = (PUZZLEYAP.WIDTH - buttonWidth) / 2,
         thirdHeight = PUZZLEYAP.HEIGHT / 3,
         buttonY = thirdHeight / 2,
-        fontSize = PUZZLEYAP.getProperFont(40),
+        fontSize = PUZZLEYAP.getProperFont(48),
         textWidth,
         textX,
         backMenuButton;
@@ -459,9 +464,9 @@
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = PUZZLEYAP.ctx.measureText(this.name).width / 2;
       textX = (PUZZLEYAP.WIDTH / 2) - textWidth;
-      PUZZLEYAP.Draw.text(this.name, textX, buttonY + 30, fontSize, "black");
+      PUZZLEYAP.Draw.text(this.name, textX, buttonY, fontSize, "black");
 
-      PUZZLEYAP.loadImage("resources/img/Ace.jpg", buttonX, PUZZLEYAP.HEIGHT / 4, buttonWidth, PUZZLEYAP.HEIGHT / 2);
+      PUZZLEYAP.loadImage("resources/img/Ace.jpg", buttonX, PUZZLEYAP.HEIGHT / 4 - fontSize / 4, buttonWidth, PUZZLEYAP.HEIGHT / 2);
 
       // MENU BUTTOMS
       backMenuButton = new PUZZLEYAP.UIObject.Button("Atrás", buttonX,
@@ -469,6 +474,7 @@
 
       // MENU HANDLERS
       backMenuButton.handler = function () {
+        PUZZLEYAP.Input.unsetTapped();
         PUZZLEYAP.gameMode.pop();
         PUZZLEYAP.gameMode.push(new PUZZLEYAP.MainMenuState());
       };
