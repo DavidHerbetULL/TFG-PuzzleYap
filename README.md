@@ -1,5 +1,5 @@
 # Prototipo de Juego 2D multiplataforma para móviles
-**Estado:** Desarrollando la version 0.2
+**Estado:** Desarrollando la version 0.3
 
 ## Tabla de contenidos
 - [**¿De qué va este este proyecto?**](#proyecto)
@@ -23,7 +23,7 @@ También nos proporciona una API para acceder a las características del hardwar
 Para el desarrollo del prototipo se han fijado una serie de objetivos que son los siguientes:
 
 - **Objetivo 1:** Renderizado de una imagen (v0.1) <img src="http://banot.etsii.ull.es/alu4078/WebMercapriceV4/imagenes/success.png" height="17" width="17"></img>
-- **Objetivo 2:** Captura de una imagen con la cámara del dispositivo (v0.2)
+- **Objetivo 2:** Captura de una imagen con la cámara del dispositivo (v0.2) <img src="http://banot.etsii.ull.es/alu4078/WebMercapriceV4/imagenes/success.png" height="17" width="17"></img>
 - **Objetivo 3:** Fragmentación como puzzle de la imagen (v0.3)
 - **Objetivo 4:** Envío del puzzle (v0.4)
 - **Objetivo 5:** Solución del puzzle (v0.5)
