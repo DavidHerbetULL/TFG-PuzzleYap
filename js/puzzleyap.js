@@ -383,7 +383,7 @@
       PUZZLEYAP.ctx.rotate(degrees * Math.PI / 180);
 
       // draw the image
-      // since the context is rotated, the image will be rotated also
+      // since the PUZZLEYAP.ctx is rotated, the image will be rotated also
       PUZZLEYAP.ctx.drawImage(image, -imageHeight / 2, -imageWidth / 2, imageHeight, imageWidth);
 
       // restore the rotation
@@ -404,7 +404,7 @@
         x2,
         y2;
 
-      for (i = 0; i <= board.totalColumns; i += 1) {
+/*      for (i = 0; i <= board.totalColumns; i += 1) {
         x2 = blockWidth * i + x;
         PUZZLEYAP.ctx.moveTo(x2, y);
         PUZZLEYAP.ctx.lineTo(x2, height + y);
@@ -414,8 +414,12 @@
         y2 = blockHeight * i + y;
         PUZZLEYAP.ctx.moveTo(x, y2);
         PUZZLEYAP.ctx.lineTo(width + x, y2);
-      }
+      }*/
 
+      PUZZLEYAP.ctx.moveTo(x, y);
+      PUZZLEYAP.ctx.lineTo(x + width, y);
+      PUZZLEYAP.ctx.lineTo(x + width, y + height);
+      PUZZLEYAP.ctx.lineTo(x, y + height);
       PUZZLEYAP.ctx.closePath();
       PUZZLEYAP.ctx.stroke();
     }
@@ -861,15 +865,15 @@
     this.stateElements = [];
     this.name = "Jugar";
 
-    function ImageBlock(no, x, y/*, up, down, left, right*/) {
+    function ImageBlock(no, x, y, up, down, left, right) {
       this.no = no;
       this.x = x;
       this.y = y;
       this.isSelected = false;
-/*      this.up = up;
+      this.up = up;
       this.down = down;
       this.left = left;
-      this.right = right;*/
+      this.right = right;
     }
 
     var BLOCK_IMG_WIDTH = PUZZLEYAP.cameraImage.width,
@@ -903,7 +907,7 @@
 
         if ((x >= x1 && x <= x2) && (y >= y1 && y <= y2)) {
           //alert("found: " + imgBlock.no);
-          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y);
+          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y, imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
           //drawImageBlock(img);
           return img;
         }
@@ -925,7 +929,7 @@
         y1 = imgBlock.y;
 
         if ((x === x1) && (y === y1)) {
-          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y);
+          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y, imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
           //drawImageBlock(img);
           return img;
         }
@@ -968,7 +972,7 @@
         y,
         block;
 
-/*      for (i = 0; i < TOTAL_ROWS; i += 1) {
+      for (i = 0; i < TOTAL_ROWS; i += 1) {
         piecesArray[i] = [];
 
         for (j = 0; j < TOTAL_COLUMNS; j += 1) {
@@ -976,27 +980,28 @@
           piecesArray[i][j].right = holeOrValley[Math.floor(Math.random() * 2)];
           piecesArray[i][j].down = holeOrValley[Math.floor(Math.random() * 2)];
 
-          if (j === 0) {
-            piecesArray[i][j].top = flatSide;
-          }
-
-          if (j > 0) {
-            piecesArray[i][j].up = flatSide - piecesArray[i][j - 1].down;
-          }
-
-          if (j === TOTAL_COLUMNS - 1) {
-            piecesArray[i][j].down = flatSide;
-          }
-
           if (i === 0) {
-            piecesArray[i][j].left = flatSide;
+            piecesArray[i][j].up = flatSide;
           }
 
           if (i > 0) {
-            piecesArray[i][j].left = flatSide - piecesArray[i - 1][j].right;
+            piecesArray[i][j].up = flatSide - piecesArray[i - 1][j].down;
           }
 
-          if (i === TOTAL_ROWS - 1) {
+          if (i === TOTAL_COLUMNS - 1) {
+            piecesArray[i][j].down = flatSide;
+          }
+
+          // J
+          if (j === 0) {
+            piecesArray[i][j].left = flatSide;
+          }
+
+          if (j > 0) {
+            piecesArray[i][j].left = flatSide - piecesArray[i][j - 1].right;
+          }
+
+          if (j === TOTAL_ROWS - 1) {
             piecesArray[i][j].right = flatSide;
           }
 
@@ -1005,8 +1010,8 @@
           imgBlock = new ImageBlock(counter, randomX, randomY, piecesArray[i][j].up,
             piecesArray[i][j].down, piecesArray[i][j].left, piecesArray[i][j].right);
 
-          x = (counter % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x;
-          y = Math.floor(counter / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight + verticalMargin;
+          x = (counter % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x - BLOCK_WIDTH / 4;
+          y = Math.floor(counter / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight + verticalMargin - BLOCK_HEIGHT / 4;
           block = new ImageBlock(counter, x, y, null, null, null, null);
           imageBlockList.push(imgBlock);
           blockList.push(block);
@@ -1014,35 +1019,122 @@
           counter += 1;
         }
 
-      }*/
-
-      for (i = 0; i < total; i += 1) {
-
-        randomX = PUZZLEYAP.Helpers.randomYtoX(x1, x2, 2);
-        randomY = PUZZLEYAP.Helpers.randomYtoX(y1, y2, 2);
-        imgBlock = new ImageBlock(i, randomX, randomY);
-        x = (i % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x;
-        y = Math.floor(i / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight + verticalMargin;
-        block = new ImageBlock(i, x, y);
-        imageBlockList.push(imgBlock);
-        blockList.push(block);
       }
     }
 
-    function drawFinalImage(index, destX, destY, destWidth, destHeight) {
+    function drawJigsawPiece(xCoord, yCoord, width, height, up, down, left, right) {
+      var x = xCoord,
+        y = yCoord,
+        pieceWidth = width,
+        pieceHeight = height,
+        halfPieceWidth = pieceWidth / 2,
+        halfPieceHeight = pieceHeight / 2,
+        holeSize,
+        puzzleRectWidth,
+        puzzleRectHeight;
+
+      if (height > width) {
+        holeSize = pieceWidth / 4;
+      } else {
+        holeSize = pieceHeight / 4;
+      }
+      puzzleRectWidth = (pieceWidth - holeSize) / 2;
+      puzzleRectHeight = (pieceHeight - holeSize) / 2;
+
+      PUZZLEYAP.ctx.beginPath();
+      PUZZLEYAP.ctx.moveTo(x, y);
+      PUZZLEYAP.ctx.lineTo(x + puzzleRectWidth, y);
+
+      // TOP
+      if (up === 1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize, x + halfPieceWidth, y - holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + pieceWidth - holeSize, y - holeSize, x + pieceWidth - puzzleRectWidth, y);
+      }
+
+      if (up === -1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + holeSize, x + halfPieceWidth, y + holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + pieceWidth - holeSize, y + holeSize, x + pieceWidth - puzzleRectWidth, y);
+      }
+      x += pieceWidth; // 200 + 200 = 400
+
+      // RIGHT
+      PUZZLEYAP.ctx.lineTo(x, y);
+      PUZZLEYAP.ctx.lineTo(x, y + puzzleRectHeight);
+
+      if (right === 1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + puzzleRectHeight - holeSize / 2, x + holeSize, y + halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + holeSize + halfPieceHeight, x, y + pieceHeight - puzzleRectHeight);
+      }
+
+      if (right === -1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + puzzleRectHeight - holeSize / 2, x - holeSize, y + halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize + halfPieceHeight, x, y + pieceHeight - puzzleRectHeight);
+      }
+      y += pieceHeight; // 200 + 200 = 400
+
+      // BOTTOM
+      PUZZLEYAP.ctx.lineTo(x, y);
+      PUZZLEYAP.ctx.lineTo(x - puzzleRectWidth, y);
+
+      if (down === 1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize, x - halfPieceWidth, y + holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - pieceWidth + holeSize, y + holeSize, x - pieceWidth + puzzleRectWidth, y);
+      }
+
+      if (down === -1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize, x - halfPieceWidth, y - holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - pieceWidth + holeSize, y - holeSize, x - pieceWidth + puzzleRectWidth, y);
+      }
+      x -= pieceWidth;
+
+      // LEFT
+      PUZZLEYAP.ctx.lineTo(x, y);
+      PUZZLEYAP.ctx.lineTo(x, y - puzzleRectHeight);
+
+      if (left === 1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - puzzleRectHeight + holeSize / 2, x - holeSize, y - halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize - halfPieceHeight, x, y - pieceHeight + puzzleRectHeight);
+      }
+
+      if (left === -1) {
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - puzzleRectHeight + holeSize / 2, x + holeSize, y - halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize - halfPieceHeight, x, y - pieceHeight + puzzleRectHeight);
+      }
+
+      y -= pieceHeight;
+      PUZZLEYAP.ctx.lineTo(x, y);
+      //canvas.fillStroke();
+      //PUZZLEYAP.ctx.stroke();
+      //PUZZLEYAP.ctx.closePath();
+
+    }
+
+    function drawFinalImage(index, destX, destY, destWidth, destHeight, up, down, left, right) {
+      var srcX = (index % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x,
+        srcY = Math.floor(index / TOTAL_COLUMNS) * BLOCK_HEIGHT + PUZZLEYAP.cameraImage.y,
+        holeSizeWidth = BLOCK_WIDTH / 4,
+        holeSizeHeight = BLOCK_HEIGHT / 4;
+
+      // Save the state, so we can undo the clipping
       PUZZLEYAP.ctx.save();
 
-      var srcX = (index % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x,
-        srcY = Math.floor(index / TOTAL_COLUMNS) * BLOCK_HEIGHT + PUZZLEYAP.cameraImage.y;
+      // Create the puzzle piece
+      drawJigsawPiece(destX + holeSizeWidth, destY + holeSizeHeight, destWidth, destHeight, up, down, left, right);
 
-      PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, srcX, srcY, BLOCK_WIDTH, BLOCK_HEIGHT, destX, destY, destWidth, destHeight);
-      PUZZLEYAP.ctx.rect(destX, destY, destWidth, destHeight);
+      // Clip to the current path
+      PUZZLEYAP.ctx.clip();
+
+      PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, srcX - holeSizeWidth, srcY - holeSizeHeight, BLOCK_WIDTH + holeSizeWidth * 2, BLOCK_HEIGHT + holeSizeHeight * 2, destX, destY, destWidth + holeSizeWidth * 2, destHeight + holeSizeHeight * 2);
+
+      //PUZZLEYAP.ctx.rect(destX, destY, destWidth, destHeight);
       //PUZZLEYAP.ctx.stroke();
-      //PUZZLEYAP.ctx.restore();
+
+      // Undo the clipping
+      PUZZLEYAP.ctx.restore();
     }
 
     function drawImageBlock(imgBlock) {
-      drawFinalImage(imgBlock.no, imgBlock.x, imgBlock.y, BLOCK_WIDTH, BLOCK_HEIGHT);
+      drawFinalImage(imgBlock.no, imgBlock.x, imgBlock.y, BLOCK_WIDTH, BLOCK_HEIGHT, imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
     }
 
     function drawAllImages() {
@@ -1073,8 +1165,8 @@
 
     this.handleMovePuzzlePiece = function (input) {
       if (selectedBlock) {
-        selectedBlock.x = input.x  - 5;
-        selectedBlock.y = input.y  - 5;
+        selectedBlock.x = input.x;
+        selectedBlock.y = input.y;
         //DrawGame();
       }
     };
