@@ -31,6 +31,8 @@
       picture: null,
       url: null
     },
+    localImageUrl: "resources/img/Ace.jpg",
+    isPlaying: false,
 
     // Crea el canvas y lo ajusta a la pantalla
     setCanvas: function () {
@@ -62,16 +64,25 @@
         this.canvas.addEventListener("pointerdown", function (e) {
           e.preventDefault();
           PUZZLEYAP.Input.setTapped(e);
+          if (PUZZLEYAP.isPlaying) {
+            PUZZLEYAP.gameMode.currentState().handleGetPuzzlePiece(PUZZLEYAP.Input);
+          }
         }, false);
 
         this.canvas.addEventListener("pointerup", function (e) {
           e.preventDefault();
           PUZZLEYAP.Input.unsetTapped();
+          if (PUZZLEYAP.isPlaying) {
+            PUZZLEYAP.gameMode.currentState().handleDropPuzzlePiece(PUZZLEYAP.Input);
+          }
         }, false);
 
         this.canvas.addEventListener("pointermove", function (e) {
           e.preventDefault();
           PUZZLEYAP.Input.setHovered(e);
+          if (PUZZLEYAP.isPlaying) {
+            PUZZLEYAP.gameMode.currentState().handleMovePuzzlePiece(PUZZLEYAP.Input);
+          }
         });
 
         if (navigator.maxTouchPoints > 1) {
@@ -90,17 +101,27 @@
             // touches. Solo se requiere el primer toque,
             // el cual pasaremos como input
             PUZZLEYAP.Input.setTapped(e.touches[0]);
+            if (PUZZLEYAP.isPlaying) {
+              PUZZLEYAP.gameMode.currentState().handleGetPuzzlePiece(PUZZLEYAP.Input);
+            }
           }, false);
 
           this.canvas.addEventListener('touchmove', function (e) {
             e.preventDefault();
             // If playing game, pasamos el input
+            PUZZLEYAP.Input.setHovered(e.touches[0]);
+            if (PUZZLEYAP.isPlaying) {
+              PUZZLEYAP.gameMode.currentState().handleMovePuzzlePiece(PUZZLEYAP.Input);
+            }
 
           }, false);
 
           this.canvas.addEventListener('touchend', function (e) {
             e.preventDefault();
-            PUZZLEYAP.Input.reset();
+            PUZZLEYAP.Input.unsetTapped();
+            if (PUZZLEYAP.isPlaying) {
+              PUZZLEYAP.gameMode.currentState().handleDropPuzzlePiece(PUZZLEYAP.Input);
+            }
           }, false);
 
         } else {
@@ -109,16 +130,25 @@
           this.canvas.addEventListener("mousedown", function (e) {
             e.preventDefault();
             PUZZLEYAP.Input.setTapped(e);
+            if (PUZZLEYAP.isPlaying) {
+              PUZZLEYAP.gameMode.currentState().handleGetPuzzlePiece(PUZZLEYAP.Input);
+            }
           }, false);
 
           this.canvas.addEventListener("mouseup", function (e) {
             e.preventDefault();
             PUZZLEYAP.Input.unsetTapped();
+            if (PUZZLEYAP.isPlaying) {
+              PUZZLEYAP.gameMode.currentState().handleDropPuzzlePiece(PUZZLEYAP.Input);
+            }
           }, false);
 
           this.canvas.addEventListener("mousemove", function (e) {
             e.preventDefault();
             PUZZLEYAP.Input.setHovered(e);
+            if (PUZZLEYAP.isPlaying) {
+              PUZZLEYAP.gameMode.currentState().handleMovePuzzlePiece(PUZZLEYAP.Input);
+            }
           });
         }
       }
@@ -199,6 +229,12 @@
         var state = states.top();
         if (state.onResume) {
           state.onResume();
+        }
+      };
+      this.currentState = function () {
+        var state = states.top();
+        if (state) {
+          return state;
         }
       };
     },
@@ -287,7 +323,14 @@
         PUZZLEYAP.ctx.drawImage(this, x, y, width, height);
       }, false);
       img.src = source; // Set source path
+    },
+    randomYtoX: function (minVal, maxVal, floatVal) {
+      var randVal = minVal + (Math.random() * (maxVal - minVal)),
+        val = typeof floatVal === 'undefined' ? Math.round(randVal) : randVal.toFixed(floatVal);
+
+      return Math.round(val);
     }
+
   };
 
 
@@ -355,8 +398,8 @@
       PUZZLEYAP.ctx.lineWidth = 1;
 
       PUZZLEYAP.ctx.beginPath();
-      var blockWidth = Math.round(width / 2),
-        blockHeight = Math.round(height / 2),
+      var blockWidth = Math.round(width / board.totalColumns),
+        blockHeight = Math.round(height / board.totalRows),
         i,
         x2,
         y2;
@@ -396,14 +439,6 @@
     }
   };
 
-  PUZZLEYAP.Game = {
-    imageBlock: function (no, x, y) {
-      this.no = no;
-      this.x = x;
-      this.y = y;
-      this.isSelected = false;
-    }
-  };
 
   // Interfaz de usuario
   // -------------------
@@ -533,7 +568,8 @@
 
       aboutMenuButton.handler = function () {
         PUZZLEYAP.gameMode.pop();
-        PUZZLEYAP.gameMode.push(new PUZZLEYAP.AboutState());
+        //PUZZLEYAP.gameMode.push(new PUZZLEYAP.AboutState());
+        PUZZLEYAP.gameMode.push(new PUZZLEYAP.ShowImageState());
       };
 
       exitMenuButton.handler = function () {
@@ -705,7 +741,7 @@
       readyMenuButton.handler = function () {
         PUZZLEYAP.Input.unsetTapped();
         PUZZLEYAP.gameMode.pop();
-        PUZZLEYAP.gameMode.push(new PUZZLEYAP.PlayState());
+        PUZZLEYAP.gameMode.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.easy));
       };
 
       this.stateElements.push(backMenuButton, readyMenuButton);
@@ -720,6 +756,8 @@
       });
 
       PUZZLEYAP.cameraImage.url = PUZZLEYAP.canvas.toDataURL();
+      PUZZLEYAP.cameraImage.img = new Image();
+      PUZZLEYAP.cameraImage.img.src = PUZZLEYAP.cameraImage.url;
 
       if (CocoonJS.Camera.isCapturing(PUZZLEYAP.deviceBackCameraID)) {
         CocoonJS.Camera.stopCapturing(PUZZLEYAP.deviceBackCameraID);
@@ -765,12 +803,8 @@
       PUZZLEYAP.Draw.text(this.name, textX, buttonY, fontSize, "black");
 
       if (PUZZLEYAP.cameraImage.url !== null && PUZZLEYAP.cameraImage.url !== undefined) {
-        console.log("No camera available");
-        imageElement.img = new Image();
-        imageElement.img.src = PUZZLEYAP.cameraImage.url;
-
         imageElement.draw = function () {
-          PUZZLEYAP.ctx.drawImage(this.img, PUZZLEYAP.buttonSettings.x, PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height, PUZZLEYAP.cameraImage.x, PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height);
+          PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, PUZZLEYAP.buttonSettings.x, PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height, PUZZLEYAP.cameraImage.x, PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height);
         };
 
       } else {
@@ -792,8 +826,7 @@
         PUZZLEYAP.gameMode.push(new PUZZLEYAP.MainMenuState());
       };
 
-      this.stateElements.push(imageElement);
-      this.stateElements.push(backMenuButton);
+      this.stateElements.push(imageElement, backMenuButton);
 
     };
 
@@ -824,48 +857,276 @@
 
   };
 
-  PUZZLEYAP.PlayState = function () {
+  PUZZLEYAP.PlayState = function (board) {
     this.stateElements = [];
     this.name = "Jugar";
 
+    function ImageBlock(no, x, y/*, up, down, left, right*/) {
+      this.no = no;
+      this.x = x;
+      this.y = y;
+      this.isSelected = false;
+/*      this.up = up;
+      this.down = down;
+      this.left = left;
+      this.right = right;*/
+    }
+
+    var BLOCK_IMG_WIDTH = PUZZLEYAP.cameraImage.width,
+      BLOCK_IMG_HEIGHT = PUZZLEYAP.cameraImage.height,
+      TOTAL_ROWS = board.totalRows,
+      TOTAL_COLUMNS = board.totalColumns,
+      TOTAL_PIECES = TOTAL_ROWS * TOTAL_COLUMNS,
+      BLOCK_WIDTH = Math.round(BLOCK_IMG_WIDTH / TOTAL_COLUMNS),
+      BLOCK_HEIGHT = Math.round(BLOCK_IMG_HEIGHT / TOTAL_ROWS),
+      topBarHeight = PUZZLEYAP.HEIGHT / 8,
+      verticalMargin = PUZZLEYAP.HEIGHT / 16,
+      imageBlockList = [],
+      blockList = [],
+      selectedBlock = null;
+
+    function getImageBlock(list, x, y) {
+      var i = list.length - 1,
+        imgBlock,
+        x1,
+        x2,
+        y1,
+        y2,
+        img;
+
+      for (i; i >= 0; i -= 1) {
+        imgBlock = list[i];
+        x1 = imgBlock.x;
+        x2 = x1 + BLOCK_WIDTH;
+        y1 = imgBlock.y;
+        y2 = y1 + BLOCK_HEIGHT;
+
+        if ((x >= x1 && x <= x2) && (y >= y1 && y <= y2)) {
+          //alert("found: " + imgBlock.no);
+          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y);
+          //drawImageBlock(img);
+          return img;
+        }
+      }
+      return null;
+    }
+
+    function getImageBlockOnEqual(list, x, y) {
+      var i = 0,
+        listLength = list.length,
+        imgBlock,
+        x1,
+        y1,
+        img;
+
+      for (i; i < listLength; i += 1) {
+        imgBlock = list[i];
+        x1 = imgBlock.x;
+        y1 = imgBlock.y;
+
+        if ((x === x1) && (y === y1)) {
+          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y);
+          //drawImageBlock(img);
+          return img;
+        }
+      }
+      return null;
+    }
+
+    function isFinished() {
+      var total = TOTAL_PIECES,
+        i = 0,
+        img,
+        block;
+
+      for (i; i < total; i += 1) {
+        img = imageBlockList[i];
+        block = blockList[i];
+        if ((img.x !== block.x) || (img.y !== block.y)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function setImageBlock() {
+      var total = TOTAL_PIECES,
+        y1 = topBarHeight + verticalMargin * 2 + PUZZLEYAP.cameraImage.height,
+        y2 = PUZZLEYAP.HEIGHT - verticalMargin - topBarHeight,
+        x1 = PUZZLEYAP.WIDTH / 32,
+        x2 = PUZZLEYAP.WIDTH - x1 - BLOCK_WIDTH,
+        piecesArray = [],
+        holeOrValley = [-1, 1],
+        flatSide = 0,
+        counter = 0,
+        i,
+        j,
+        randomX,
+        randomY,
+        imgBlock,
+        x,
+        y,
+        block;
+
+/*      for (i = 0; i < TOTAL_ROWS; i += 1) {
+        piecesArray[i] = [];
+
+        for (j = 0; j < TOTAL_COLUMNS; j += 1) {
+          piecesArray[i][j] = {};
+          piecesArray[i][j].right = holeOrValley[Math.floor(Math.random() * 2)];
+          piecesArray[i][j].down = holeOrValley[Math.floor(Math.random() * 2)];
+
+          if (j === 0) {
+            piecesArray[i][j].top = flatSide;
+          }
+
+          if (j > 0) {
+            piecesArray[i][j].up = flatSide - piecesArray[i][j - 1].down;
+          }
+
+          if (j === TOTAL_COLUMNS - 1) {
+            piecesArray[i][j].down = flatSide;
+          }
+
+          if (i === 0) {
+            piecesArray[i][j].left = flatSide;
+          }
+
+          if (i > 0) {
+            piecesArray[i][j].left = flatSide - piecesArray[i - 1][j].right;
+          }
+
+          if (i === TOTAL_ROWS - 1) {
+            piecesArray[i][j].right = flatSide;
+          }
+
+          randomX = PUZZLEYAP.Helpers.randomYtoX(x1, x2, 2);
+          randomY = PUZZLEYAP.Helpers.randomYtoX(y1, y2, 2);
+          imgBlock = new ImageBlock(counter, randomX, randomY, piecesArray[i][j].up,
+            piecesArray[i][j].down, piecesArray[i][j].left, piecesArray[i][j].right);
+
+          x = (counter % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x;
+          y = Math.floor(counter / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight + verticalMargin;
+          block = new ImageBlock(counter, x, y, null, null, null, null);
+          imageBlockList.push(imgBlock);
+          blockList.push(block);
+
+          counter += 1;
+        }
+
+      }*/
+
+      for (i = 0; i < total; i += 1) {
+
+        randomX = PUZZLEYAP.Helpers.randomYtoX(x1, x2, 2);
+        randomY = PUZZLEYAP.Helpers.randomYtoX(y1, y2, 2);
+        imgBlock = new ImageBlock(i, randomX, randomY);
+        x = (i % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x;
+        y = Math.floor(i / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight + verticalMargin;
+        block = new ImageBlock(i, x, y);
+        imageBlockList.push(imgBlock);
+        blockList.push(block);
+      }
+    }
+
+    function drawFinalImage(index, destX, destY, destWidth, destHeight) {
+      PUZZLEYAP.ctx.save();
+
+      var srcX = (index % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x,
+        srcY = Math.floor(index / TOTAL_COLUMNS) * BLOCK_HEIGHT + PUZZLEYAP.cameraImage.y;
+
+      PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, srcX, srcY, BLOCK_WIDTH, BLOCK_HEIGHT, destX, destY, destWidth, destHeight);
+      PUZZLEYAP.ctx.rect(destX, destY, destWidth, destHeight);
+      //PUZZLEYAP.ctx.stroke();
+      //PUZZLEYAP.ctx.restore();
+    }
+
+    function drawImageBlock(imgBlock) {
+      drawFinalImage(imgBlock.no, imgBlock.x, imgBlock.y, BLOCK_WIDTH, BLOCK_HEIGHT);
+    }
+
+    function drawAllImages() {
+      var i = 0,
+        imageBlocks = imageBlockList.length,
+        imgBlock;
+      for (i; i < imageBlocks; i += 1) {
+        imgBlock = imageBlockList[i];
+        if (imgBlock.isSelected === false) {
+          drawImageBlock(imgBlock);
+        }
+      }
+    }
+
+    this.handleGetPuzzlePiece = function (input) {
+
+      // remove old selected
+      if (selectedBlock !== null) {
+        imageBlockList[selectedBlock.no].isSelected = false;
+      }
+
+      selectedBlock = getImageBlock(imageBlockList, input.x, input.y);
+
+      if (selectedBlock) {
+        imageBlockList[selectedBlock.no].isSelected = true;
+      }
+    };
+
+    this.handleMovePuzzlePiece = function (input) {
+      if (selectedBlock) {
+        selectedBlock.x = input.x  - 5;
+        selectedBlock.y = input.y  - 5;
+        //DrawGame();
+      }
+    };
+
+    this.handleDropPuzzlePiece = function (input) {
+      if (selectedBlock) {
+        var index = selectedBlock.no,
+          block = getImageBlock(blockList, input.x, input.y),
+          blockOldImage;
+
+        if (block) {
+          blockOldImage = getImageBlockOnEqual(imageBlockList, block.x, block.y);
+          if (blockOldImage === null) {
+            imageBlockList[index].x = block.x;
+            imageBlockList[index].y = block.y;
+          }
+        } else {
+          imageBlockList[index].x = selectedBlock.x;
+          imageBlockList[index].y = selectedBlock.y;
+        }
+
+        imageBlockList[index].isSelected = false;
+        selectedBlock = null;
+        //DrawGame();
+
+        if (isFinished()) {
+          alert("SE ACABÓ");
+        }
+
+      }
+
+    };
+
     this.onEnter = function () {
+      // LAS INICIALIZACIONES DEL PUZZLE Y SUS ELEMENTOS VAN AQUÍ
       console.log("Entrando en: playState");
-      var buttonWidth = PUZZLEYAP.WIDTH / 2 + PUZZLEYAP.WIDTH / 8,
-        buttonHeight = PUZZLEYAP.HEIGHT / 12,
-        buttonX = (PUZZLEYAP.WIDTH - PUZZLEYAP.buttonSettings.width) / 2,
-        thirdHeight = PUZZLEYAP.HEIGHT / 3,
-        buttonY = thirdHeight / 2,
-        fontSize = PUZZLEYAP.Helpers.getProperFont(48),
+      var fontSize = PUZZLEYAP.Helpers.getProperFont(48),
         textWidth,
-        textX,
-        backMenuButton,
-        boardElement = {};
+        textX;
+
+      PUZZLEYAP.isPlaying = true;
+      //
+      // Inicializar variables
+      setImageBlock();
+      // this.draw ==
+
 
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = PUZZLEYAP.ctx.measureText(this.name).width / 2;
       textX = (PUZZLEYAP.WIDTH / 2) - textWidth;
-      PUZZLEYAP.Draw.text(this.name, textX, buttonY, fontSize, "black");
+      //PUZZLEYAP.Draw.text(this.name, textX, buttonY, fontSize, "black");
 
-
-      boardElement.update = function () {};
-      boardElement.draw = function () {
-        PUZZLEYAP.Draw.gameCells(PUZZLEYAP.gameDifficulty.easy, PUZZLEYAP.buttonSettings.x, PUZZLEYAP.HEIGHT / 4 - fontSize / 4, PUZZLEYAP.buttonSettings.width, PUZZLEYAP.HEIGHT / 2);
-      };
-
-
-      // MENU BUTTOMS
-      backMenuButton = new PUZZLEYAP.UIObject.Button("Atrás", PUZZLEYAP.buttonSettings.x,
-        buttonY + 2 * thirdHeight - PUZZLEYAP.buttonSettings.height / 2, PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
-
-      // MENU HANDLERS
-      backMenuButton.handler = function () {
-        PUZZLEYAP.Input.unsetTapped();
-        PUZZLEYAP.gameMode.pop();
-        PUZZLEYAP.gameMode.push(new PUZZLEYAP.MainMenuState());
-      };
-
-      this.stateElements.push(boardElement);
-      this.stateElements.push(backMenuButton);
 
     };
 
@@ -876,18 +1137,32 @@
         }
       });
       PUZZLEYAP.Draw.clear();
+      PUZZLEYAP.isPlaying = false;
     };
 
     this.update = function () {
       _.each(this.stateElements, function (element) {
         element.update();
       });
+
+      //handle events
     };
 
     this.render = function () {
+      PUZZLEYAP.Draw.clear();
       _.each(this.stateElements, function (element) {
         element.draw();
       });
+      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
+      PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x, topBarHeight + verticalMargin, PUZZLEYAP.buttonSettings.width, PUZZLEYAP.HEIGHT / 2);
+
+      //PUZZLEYAP.Draw.puzzlePieces();
+      drawAllImages();
+
+      // drawPuzzlePieces
+      if (selectedBlock) {
+        drawImageBlock(selectedBlock);
+      }
     };
 
   };
