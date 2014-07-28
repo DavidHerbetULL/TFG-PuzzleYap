@@ -163,7 +163,7 @@
       }
     },
 
-    // Remover
+    // Estado vacío
     EmptyState: function () {
       this.name = "";
       this.update = function () {};
@@ -765,6 +765,7 @@
 
       if (CocoonJS.Camera.isCapturing(PUZZLEYAP.deviceBackCameraID)) {
         CocoonJS.Camera.stopCapturing(PUZZLEYAP.deviceBackCameraID);
+        PUZZLEYAP.cameraImage.picture = null;
       }
       PUZZLEYAP.Draw.clear();
     };
