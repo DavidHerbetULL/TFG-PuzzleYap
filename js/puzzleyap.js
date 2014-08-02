@@ -1062,19 +1062,19 @@
         y = yCoord,
         pieceWidth = width,
         pieceHeight = height,
-        halfPieceWidth = bitWise(pieceWidth / 2),
-        halfPieceHeight = bitWise(pieceHeight / 2),
+        halfPieceWidth = (pieceWidth / 2),
+        halfPieceHeight = (pieceHeight / 2),
         holeSize,
         puzzleRectWidth,
         puzzleRectHeight;
 
       if (height > width) {
-        holeSize = bitWise(pieceWidth / 4);
+        holeSize = (pieceWidth / 4);
       } else {
-        holeSize = bitWise(pieceHeight / 4);
+        holeSize = (pieceHeight / 4);
       }
-      puzzleRectWidth = bitWise((pieceWidth - holeSize) / 2);
-      puzzleRectHeight = bitWise((pieceHeight - holeSize) / 2);
+      puzzleRectWidth = ((pieceWidth - holeSize) / 2);
+      puzzleRectHeight = ((pieceHeight - holeSize) / 2);
 
       PUZZLEYAP.ctx.beginPath();
       PUZZLEYAP.ctx.moveTo(x, y);
@@ -1097,12 +1097,12 @@
       PUZZLEYAP.ctx.lineTo(x, y + puzzleRectHeight);
 
       if (right === 1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + puzzleRectHeight - bitWise(holeSize / 2), x + holeSize, y + halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + puzzleRectHeight - (holeSize / 2), x + holeSize, y + halfPieceHeight);
         PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + holeSize + halfPieceHeight, x, y + pieceHeight - puzzleRectHeight);
       }
 
       if (right === -1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + puzzleRectHeight - bitWise(holeSize / 2), x - holeSize, y + halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + puzzleRectHeight - (holeSize / 2), x - holeSize, y + halfPieceHeight);
         PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize + halfPieceHeight, x, y + pieceHeight - puzzleRectHeight);
       }
       y += pieceHeight; // 200 + 200 = 400
@@ -1127,12 +1127,12 @@
       PUZZLEYAP.ctx.lineTo(x, y - puzzleRectHeight);
 
       if (left === 1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - puzzleRectHeight + bitWise(holeSize / 2), x - holeSize, y - halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - puzzleRectHeight + (holeSize / 2), x - holeSize, y - halfPieceHeight);
         PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize - halfPieceHeight, x, y - pieceHeight + puzzleRectHeight);
       }
 
       if (left === -1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - puzzleRectHeight + bitWise(holeSize / 2), x + holeSize, y - halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - puzzleRectHeight + (holeSize / 2), x + holeSize, y - halfPieceHeight);
         PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize - halfPieceHeight, x, y - pieceHeight + puzzleRectHeight);
       }
 
