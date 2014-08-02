@@ -125,8 +125,8 @@
             canvas.addEventListener('touchmove', function (e) {
               e.preventDefault();
               // If playing game, pasamos el input
-              PUZZLEYAP.Input.setHovered(e.touches[0]);
               if (PUZZLEYAP.isPlaying) {
+                PUZZLEYAP.Input.setHovered(e.touches[0]);
                 PUZZLEYAP.gameState.currentState()
                   .handleMovePuzzlePiece(PUZZLEYAP.Input);
               }
@@ -611,15 +611,12 @@
       };
 
       exitMenuButton.handler = function () {
+        PUZZLEYAP.Input.unsetTapped();
         var modalWindow = CocoonJS.App.showMessageBox("Salir de PuzzleYap", "¿Desea realmente salir de la aplicación?", "Aceptar", "Cancelar");
         CocoonJS.App.onMessageBoxConfirmed.addEventListener(function () {
           // Nota: al crear un dialogo con alert no se llega a realizar el
           // event listener de mouseup, por eso se usa unsetTapped aquí
-          PUZZLEYAP.Input.unsetTapped();
           CocoonJS.App.forceToFinish();
-        });
-        CocoonJS.App.onMessageBoxDenied.addEventListener(function () {
-          PUZZLEYAP.Input.unsetTapped();
         });
       };
 
@@ -877,6 +874,7 @@
         }
       });
       PUZZLEYAP.Draw.clear();
+      PUZZLEYAP.Input.unsetTapped();
     };
 
     this.update = function () {
@@ -1199,9 +1197,13 @@
     };
 
     this.handleMovePuzzlePiece = function (input) {
+      var centerX,
+        centerY;
       if (selectedBlock) {
-        selectedBlock.x = input.x;
-        selectedBlock.y = input.y;
+        centerX = bitWise((BLOCK_WIDTH + BLOCK_WIDTH / 2) / 2);
+        centerY = bitWise((BLOCK_HEIGHT + BLOCK_HEIGHT / 2) / 2);
+        selectedBlock.x = input.x - centerX;
+        selectedBlock.y = input.y - centerY;
         //DrawGame();
       }
     };
