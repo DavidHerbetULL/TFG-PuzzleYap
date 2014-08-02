@@ -858,7 +858,6 @@
 
       // MENU HANDLERS
       backMenuButton.handler = function () {
-        PUZZLEYAP.Input.unsetTapped();
         PUZZLEYAP.gameState.pop();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
       };
@@ -874,7 +873,7 @@
         }
       });
       PUZZLEYAP.Draw.clear();
-      PUZZLEYAP.Input.unsetTapped();
+      PUZZLEYAP.Input.reset();
     };
 
     this.update = function () {
