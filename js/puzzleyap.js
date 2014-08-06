@@ -40,8 +40,8 @@
       isPlaying: false,
 
       cameraImage: {
-        width: null,
-        height: null,
+        width: bitWise(browserWidth / 2 + browserWidth / 8),
+        height: bitWise(browserHeight / 2),
         x: null,
         y: null,
         picture: null,
@@ -754,14 +754,15 @@
       textX = halfWidth - textWidth;
       PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
 
-      PUZZLEYAP.cameraImage.width = PUZZLEYAP.buttonSettings.width;
-      PUZZLEYAP.cameraImage.height = halfHeight;
+      //PUZZLEYAP.cameraImage.width = PUZZLEYAP.buttonSettings.width;
+      //PUZZLEYAP.cameraImage.height = halfHeight;
       PUZZLEYAP.cameraImage.x = PUZZLEYAP.buttonSettings.x;
-      PUZZLEYAP.cameraImage.y = bitWise(halfHeight - halfHeight / 2);
+      PUZZLEYAP.cameraImage.y = bitWise(halfHeight - PUZZLEYAP.cameraImage.height / 2);
 
       if (PUZZLEYAP.deviceCameraAvailable) {
         PUZZLEYAP.cameraImage.picture = CocoonJS.Camera.startCapturing(PUZZLEYAP
-            .deviceBackCameraID, PUZZLEYAP.buttonSettings.width, halfHeight);
+            .deviceBackCameraID, PUZZLEYAP.cameraImage.width,
+            PUZZLEYAP.cameraImage.height);
       } else {
         img = new Image();
         img.addEventListener("load", function () {
@@ -769,8 +770,8 @@
             bitWise(halfHeight - this.height / 2), this.width, this.height);
         });
         img.src = "resources/img/Ace.jpg";
-        img.width = PUZZLEYAP.buttonSettings.width;
-        img.height = halfHeight;
+        img.width = PUZZLEYAP.cameraImage.width;
+        img.height = PUZZLEYAP.cameraImage.height;
       }
 
       // MENU BUTTOMS
@@ -813,7 +814,7 @@
 
       if (CocoonJS.Camera.isCapturing(PUZZLEYAP.deviceBackCameraID)) {
         CocoonJS.Camera.stopCapturing(PUZZLEYAP.deviceBackCameraID);
-        PUZZLEYAP.cameraImage.picture = null;
+        //PUZZLEYAP.cameraImage.picture = null;
       }
       PUZZLEYAP.Draw.clear();
     };
@@ -829,7 +830,8 @@
         element.draw();
       });
       if (PUZZLEYAP.deviceCameraAvailable) {
-        PUZZLEYAP.Draw.rotatedImage(PUZZLEYAP.cameraImage.picture, halfWidth, halfHeight, 90, PUZZLEYAP.cameraImage.width, halfHeight);
+        PUZZLEYAP.Draw.rotatedImage(PUZZLEYAP.cameraImage.picture, halfWidth,
+            halfHeight, 90, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height);
       }
     };
   };
@@ -1097,8 +1099,8 @@
       var srcX = (index % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x,
         srcY = Math.floor(index / TOTAL_COLUMNS) * BLOCK_HEIGHT +
             PUZZLEYAP.cameraImage.y,
-        holeSizeWidth = BLOCK_WIDTH / 4,
-        holeSizeHeight = BLOCK_HEIGHT / 4;
+        holeSizeWidth = bitWise(BLOCK_WIDTH / 4),
+        holeSizeHeight = bitWise(BLOCK_HEIGHT / 4);
 
       // Save the state, so we can undo the clipping
       PUZZLEYAP.ctx.save();
@@ -1230,8 +1232,8 @@
       });
       PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
       PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x,
-          topBarHeight + verticalMargin, PUZZLEYAP.buttonSettings.width,
-          PUZZLEYAP.Helpers.HALFHEIGHT);
+          topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
+          PUZZLEYAP.cameraImage.height);
 
       //PUZZLEYAP.Draw.puzzlePieces();
       drawAllImages();
