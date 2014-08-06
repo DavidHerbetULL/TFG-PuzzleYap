@@ -36,6 +36,7 @@
       deviceCameraAvailable: false,
       deviceBackCameraID: false,
       localImageUrl: "resources/img/Ace.jpg",
+      aboutImageUrl: "resources/img/David.jpg",
       isPlaying: false,
 
       cameraImage: {
@@ -266,7 +267,6 @@
         this.gameState = new this.StateStack();
         this.gameState.push(new this.MainMenuState());
         this.gameLoop();
-
       },
 
       // Bucle del juego
@@ -290,12 +290,10 @@
       resumeGame: function () {
         this.gameLoop();
       }
-
     };
 
   // Objeto de entrada (input) para manejar los toques/clicks
   PUZZLEYAP.Input = {
-
     x: 0,
     y: 0,
     tapped: false,
@@ -331,7 +329,6 @@
   };
 
   PUZZLEYAP.Helpers = {
-
     HALFWIDTH: bitWise(PUZZLEYAP.WIDTH / 2),
     HALFHEIGHT: bitWise(PUZZLEYAP.HEIGHT / 2),
 
@@ -347,6 +344,7 @@
       }, false);
       img.src = source; // Set source path
     },
+
     randomYtoX: function (minVal, maxVal, floatVal) {
       var randVal = minVal + (Math.random() * (maxVal - minVal)),
         val = typeof floatVal === 'undefined'
@@ -355,7 +353,6 @@
 
       return Math.round(val);
     }
-
   };
 
 
@@ -430,19 +427,19 @@
         x2,
         y2;
 
-// TO DO: Mejorar para visualizar cuadrícula con jigsaw
-//      for (i = 0; i <= board.totalColumns; i += 1) {
-//        x2 = blockWidth * i + x;
-//        PUZZLEYAP.ctx.moveTo(x2, y);
-//        PUZZLEYAP.ctx.lineTo(x2, height + y);
-//      }
-//
-//      for (i = 0; i <= board.totalRows; i += 1) {
-//        y2 = blockHeight * i + y;
-//        PUZZLEYAP.ctx.moveTo(x, y2);
-//        PUZZLEYAP.ctx.lineTo(width + x, y2);
-//      }
+      // Nota: Esto pinta la cuadrícula entera
+      //for (i = 0; i <= board.totalColumns; i += 1) {
+      //  x2 = blockWidth * i + x;
+      //  PUZZLEYAP.ctx.moveTo(x2, y);
+      //  PUZZLEYAP.ctx.lineTo(x2, height + y);
+      //}
+      //for (i = 0; i <= board.totalRows; i += 1) {
+      //  y2 = blockHeight * i + y;
+      //  PUZZLEYAP.ctx.moveTo(x, y2);
+      //  PUZZLEYAP.ctx.lineTo(width + x, y2);
+      //}
 
+      // Dibuja el borde del tablero del puzzle
       PUZZLEYAP.ctx.moveTo(x, y);
       PUZZLEYAP.ctx.lineTo(x + width, y);
       PUZZLEYAP.ctx.lineTo(x + width, y + height);
@@ -577,12 +574,13 @@
         playMenuButton,
         exitMenuButton;
 
+      // Dibuja el título del estado
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = PUZZLEYAP.ctx.measureText(name).width;
       textX = bitWise(PUZZLEYAP.Helpers.HALFWIDTH - textWidth / 2);
       PUZZLEYAP.Draw.text(name, textX, buttonY + fontSize / 2, fontSize, "black");
 
-      // MENU BUTTOMS
+      // Crea los botones del menú
       playMenuButton = new PUZZLEYAP.UIObject.Button("Jugar",
          PUZZLEYAP.buttonSettings.x,
          bitWise(buttonY + buttonSpace - PUZZLEYAP.buttonSettings.height / 2),
@@ -598,7 +596,7 @@
         bitWise(buttonY + 3 * buttonSpace - PUZZLEYAP.buttonSettings.height / 2),
         PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
-      // MENU HANDLERS
+      // Handlers de los botones
       playMenuButton.handler = function () {
         PUZZLEYAP.gameState.pop();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.CaptureImageState());
@@ -606,13 +604,13 @@
 
       aboutMenuButton.handler = function () {
         PUZZLEYAP.gameState.pop();
-        //PUZZLEYAP.gameState.push(new PUZZLEYAP.AboutState());
-        PUZZLEYAP.gameState.push(new PUZZLEYAP.ShowImageState());
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.AboutState());
       };
 
       exitMenuButton.handler = function () {
-        PUZZLEYAP.Input.unsetTapped();
-        var modalWindow = CocoonJS.App.showMessageBox("Salir de PuzzleYap", "¿Desea realmente salir de la aplicación?", "Aceptar", "Cancelar");
+        PUZZLEYAP.Input.reset();
+        var modalWindow = CocoonJS.App.showMessageBox("Salir de PuzzleYap",
+            "¿Desea realmente salir de la aplicación?", "Aceptar", "Cancelar");
         CocoonJS.App.onMessageBoxConfirmed.addEventListener(function () {
           // Nota: al crear un dialogo con alert no se llega a realizar el
           // event listener de mouseup, por eso se usa unsetTapped aquí
@@ -620,7 +618,7 @@
         });
       };
 
-      stateElements.push(playMenuButton, aboutMenuButton, /*playMenuButton,*/ exitMenuButton);
+      stateElements.push(playMenuButton, aboutMenuButton, exitMenuButton);
 
     };
 
@@ -648,19 +646,26 @@
         }
       });
     };
-
   };
 
   PUZZLEYAP.AboutState = function () {
     var stateElements = [],
-      name = "Acerca de PuzzleYap";
+      name = "Acerca de PuzzleYap",
+      authorImage = new Image();
+
+    authorImage.src = PUZZLEYAP.aboutImageUrl;
 
     this.onEnter = function () {
       console.log("Entrando en: AboutState");
-      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(2),
+      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
         halfWidth = PUZZLEYAP.Helpers.HALFWIDTH,
         buttonY = bitWise(buttonSpace / 2),
         fontSize = PUZZLEYAP.Helpers.getProperFont(35),
+        madeBy = "Hecho por",
+        author = "David Hernández Bethencourt",
+        imageSize = bitWise(PUZZLEYAP.buttonSettings.width / 2),
+        imageX = halfWidth - bitWise(imageSize / 2),
+        imageY = bitWise(buttonY + 1.8 * buttonSpace - imageSize / 2),
         textWidth,
         textX,
         backMenuButton,
@@ -670,19 +675,30 @@
       textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
       textX = halfWidth - textWidth;
       PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
-      PUZZLEYAP.Draw.text("Hecho por:", textX, buttonY * 2, fontSize, "grey");
-      PUZZLEYAP.Draw.text("David", textX, bitWise(buttonY * 2.5), fontSize, "blue");
-      PUZZLEYAP.Draw.text("Hernández", textX, buttonY * 3, fontSize, "blue");
-      PUZZLEYAP.Draw.text("Bethencourt", textX, bitWise(buttonY * 3.5), fontSize, "blue");
 
+      fontSize = PUZZLEYAP.Helpers.getProperFont(30),
+      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
+      textWidth = bitWise(PUZZLEYAP.ctx.measureText(madeBy).width / 2);
+      textX = halfWidth - textWidth;
+      PUZZLEYAP.Draw.text(madeBy, textX, buttonY * 2, fontSize, "grey");
+
+      fontSize = PUZZLEYAP.Helpers.getProperFont(25),
+      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
+      textWidth = bitWise(PUZZLEYAP.ctx.measureText(author).width / 2);
+      textX = halfWidth - textWidth;
+      PUZZLEYAP.Draw.text(author, textX, bitWise(buttonY * 2.8), fontSize, "blue");
+
+      authorImage.onload = function () {
+        PUZZLEYAP.ctx.drawImage(this, imageX, imageY, imageSize, imageSize);
+      };
 
       // MENU BUTTOMS
       backMenuButton = new PUZZLEYAP.UIObject.Button("Atrás", PUZZLEYAP.buttonSettings.x,
-        bitWise(buttonY + 2 * buttonSpace - PUZZLEYAP.buttonSettings.height / 2), PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
+        bitWise(buttonY + 3 * buttonSpace - PUZZLEYAP.buttonSettings.height / 2), PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       // MENU HANDLERS
       backMenuButton.handler = function () {
-        PUZZLEYAP.Input.unsetTapped();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
       };
