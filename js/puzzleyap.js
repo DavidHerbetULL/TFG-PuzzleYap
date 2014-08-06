@@ -676,13 +676,13 @@
       textX = halfWidth - textWidth;
       PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
 
-      fontSize = PUZZLEYAP.Helpers.getProperFont(30),
+      fontSize = PUZZLEYAP.Helpers.getProperFont(30);
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = bitWise(PUZZLEYAP.ctx.measureText(madeBy).width / 2);
       textX = halfWidth - textWidth;
       PUZZLEYAP.Draw.text(madeBy, textX, buttonY * 2, fontSize, "grey");
 
-      fontSize = PUZZLEYAP.Helpers.getProperFont(25),
+      fontSize = PUZZLEYAP.Helpers.getProperFont(25);
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = bitWise(PUZZLEYAP.ctx.measureText(author).width / 2);
       textX = halfWidth - textWidth;
@@ -740,7 +740,7 @@
 
     this.onEnter = function () {
       console.log("Entrando en: CaptureImageState");
-      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(2),
+      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
         buttonY = bitWise(buttonSpace / 2),
         fontSize = PUZZLEYAP.Helpers.getProperFont(48),
         textWidth,
@@ -760,13 +760,11 @@
       PUZZLEYAP.cameraImage.y = bitWise(halfHeight - halfHeight / 2);
 
       if (PUZZLEYAP.deviceCameraAvailable) {
-
-        PUZZLEYAP.cameraImage.picture = CocoonJS.Camera.startCapturing(PUZZLEYAP.deviceBackCameraID, PUZZLEYAP.buttonSettings.width, halfHeight);
-
+        PUZZLEYAP.cameraImage.picture = CocoonJS.Camera.startCapturing(PUZZLEYAP
+            .deviceBackCameraID, PUZZLEYAP.buttonSettings.width, halfHeight);
       } else {
         img = new Image();
         img.addEventListener("load", function () {
-          //PUZZLEYAP.Draw.rotatedImage(cameraElement.image, halfWidth, halfHeight, 90, PUZZLEYAP.buttonSettings.width, halfHeight);
           PUZZLEYAP.ctx.drawImage(this, PUZZLEYAP.buttonSettings.x,
             bitWise(halfHeight - this.height / 2), this.width, this.height);
         });
@@ -775,17 +773,19 @@
         img.height = halfHeight;
       }
 
-
       // MENU BUTTOMS
-      readyMenuButton = new PUZZLEYAP.UIObject.Button("Listo", PUZZLEYAP.buttonSettings.x + bitWise(PUZZLEYAP.buttonSettings.width / 2),
-        buttonY + 2 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2), bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
+      readyMenuButton = new PUZZLEYAP.UIObject.Button("Listo",
+          PUZZLEYAP.buttonSettings.x + bitWise(PUZZLEYAP.buttonSettings.width / 2),
+          buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
 
       backMenuButton = new PUZZLEYAP.UIObject.Button("Atrás", PUZZLEYAP.buttonSettings.x,
-        buttonY + 2 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2), bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
+          buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
 
       // MENU HANDLERS
       backMenuButton.handler = function () {
-        PUZZLEYAP.Input.unsetTapped();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
       };
@@ -822,7 +822,6 @@
       _.each(stateElements, function (element) {
         element.update();
       });
-
     };
 
     this.render = function () {
@@ -833,81 +832,6 @@
         PUZZLEYAP.Draw.rotatedImage(PUZZLEYAP.cameraImage.picture, halfWidth, halfHeight, 90, PUZZLEYAP.cameraImage.width, halfHeight);
       }
     };
-
-  };
-
-  PUZZLEYAP.ShowImageState = function () {
-    var stateElements = [],
-      name = "Ver imagen";
-
-    this.onEnter = function () {
-      console.log("Entrando en: ShowImageState");
-      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(2),
-        buttonY = bitWise(buttonSpace / 2),
-        fontSize = PUZZLEYAP.Helpers.getProperFont(48),
-        textWidth,
-        textX,
-        backMenuButton,
-        imageElement = {};
-
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
-      textX = PUZZLEYAP.Helpers.HALFWIDTH - textWidth;
-      PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
-
-      if (PUZZLEYAP.cameraImage.url !== null && PUZZLEYAP.cameraImage.url !== undefined) {
-        imageElement.draw = function () {
-          PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, PUZZLEYAP.buttonSettings.x, PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height, PUZZLEYAP.cameraImage.x, PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height);
-        };
-
-      } else {
-        imageElement.draw = function () {
-          PUZZLEYAP.Draw.centeredText("No hay imagen", PUZZLEYAP.Helpers.HALFHEIGHT, 40, "blue");
-        };
-      }
-
-      imageElement.update = function () {};
-
-      // MENU BUTTOMS
-      backMenuButton = new PUZZLEYAP.UIObject.Button("Atrás", PUZZLEYAP.buttonSettings.x,
-        buttonY + 2 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2), PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
-
-      // MENU HANDLERS
-      backMenuButton.handler = function () {
-        PUZZLEYAP.gameState.pop();
-        PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
-      };
-
-      stateElements.push(imageElement, backMenuButton);
-
-    };
-
-    this.onExit = function () {
-      _.each(stateElements, function (element) {
-        if (element.unsetHandler) {
-          element.unsetHandler();
-        }
-      });
-      PUZZLEYAP.Draw.clear();
-      PUZZLEYAP.Input.reset();
-    };
-
-    this.update = function () {
-      _.each(stateElements, function (element) {
-        if (element.update) {
-          element.update();
-        }
-      });
-    };
-
-    this.render = function () {
-      _.each(stateElements, function (element) {
-        if (element.draw) {
-          element.draw();
-        }
-      });
-    };
-
   };
 
   PUZZLEYAP.PlayState = function (board) {
@@ -954,9 +878,8 @@
         y2 = y1 + BLOCK_HEIGHT;
 
         if ((x >= x1 && x <= x2) && (y >= y1 && y <= y2)) {
-          //alert("found: " + imgBlock.no);
-          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y, imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
-          //drawImageBlock(img);
+          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y, imgBlock.up,
+              imgBlock.down, imgBlock.left, imgBlock.right);
           return img;
         }
       }
@@ -977,8 +900,8 @@
         y1 = imgBlock.y;
 
         if ((x === x1) && (y === y1)) {
-          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y, imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
-          //drawImageBlock(img);
+          img = new ImageBlock(imgBlock.no, imgBlock.x, imgBlock.y, imgBlock.up,
+              imgBlock.down, imgBlock.left, imgBlock.right);
           return img;
         }
       }
@@ -1058,8 +981,10 @@
           imgBlock = new ImageBlock(counter, randomX, randomY, piecesArray[i][j].up,
             piecesArray[i][j].down, piecesArray[i][j].left, piecesArray[i][j].right);
 
-          x = (counter % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x - bitWise(BLOCK_WIDTH / 4);
-          y = Math.floor(counter / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight + verticalMargin - bitWise(BLOCK_HEIGHT / 4);
+          x = (counter % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x -
+              bitWise(BLOCK_WIDTH / 4);
+          y = Math.floor(counter / TOTAL_COLUMNS) * BLOCK_HEIGHT + topBarHeight +
+              verticalMargin - bitWise(BLOCK_HEIGHT / 4);
           block = new ImageBlock(counter, x, y, null, null, null, null);
           imageBlockList.push(imgBlock);
           blockList.push(block);
@@ -1095,13 +1020,17 @@
 
       // TOP
       if (up === 1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize, x + halfPieceWidth, y - holeSize);
-        PUZZLEYAP.ctx.quadraticCurveTo(x + pieceWidth - holeSize, y - holeSize, x + pieceWidth - puzzleRectWidth, y);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize,
+            x + halfPieceWidth, y - holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + pieceWidth - holeSize,
+            y - holeSize, x + pieceWidth - puzzleRectWidth, y);
       }
 
       if (up === -1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + holeSize, x + halfPieceWidth, y + holeSize);
-        PUZZLEYAP.ctx.quadraticCurveTo(x + pieceWidth - holeSize, y + holeSize, x + pieceWidth - puzzleRectWidth, y);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize,
+            y + holeSize, x + halfPieceWidth, y + holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + pieceWidth - holeSize,
+            y + holeSize, x + pieceWidth - puzzleRectWidth, y);
       }
       x += pieceWidth; // 200 + 200 = 400
 
@@ -1110,13 +1039,17 @@
       PUZZLEYAP.ctx.lineTo(x, y + puzzleRectHeight);
 
       if (right === 1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + puzzleRectHeight - (holeSize / 2), x + holeSize, y + halfPieceHeight);
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + holeSize + halfPieceHeight, x, y + pieceHeight - puzzleRectHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + puzzleRectHeight -
+            (holeSize / 2), x + holeSize, y + halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y + holeSize + halfPieceHeight,
+            x, y + pieceHeight - puzzleRectHeight);
       }
 
       if (right === -1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + puzzleRectHeight - (holeSize / 2), x - holeSize, y + halfPieceHeight);
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize + halfPieceHeight, x, y + pieceHeight - puzzleRectHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + puzzleRectHeight -
+            (holeSize / 2), x - holeSize, y + halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize + halfPieceHeight,
+            x, y + pieceHeight - puzzleRectHeight);
       }
       y += pieceHeight; // 200 + 200 = 400
 
@@ -1125,13 +1058,17 @@
       PUZZLEYAP.ctx.lineTo(x - puzzleRectWidth, y);
 
       if (down === 1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize, x - halfPieceWidth, y + holeSize);
-        PUZZLEYAP.ctx.quadraticCurveTo(x - pieceWidth + holeSize, y + holeSize, x - pieceWidth + puzzleRectWidth, y);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y + holeSize,
+            x - halfPieceWidth, y + holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - pieceWidth + holeSize,
+            y + holeSize, x - pieceWidth + puzzleRectWidth, y);
       }
 
       if (down === -1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize, x - halfPieceWidth, y - holeSize);
-        PUZZLEYAP.ctx.quadraticCurveTo(x - pieceWidth + holeSize, y - holeSize, x - pieceWidth + puzzleRectWidth, y);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize,
+            x - halfPieceWidth, y - holeSize);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - pieceWidth + holeSize,
+            y - holeSize, x - pieceWidth + puzzleRectWidth, y);
       }
       x -= pieceWidth;
 
@@ -1140,26 +1077,26 @@
       PUZZLEYAP.ctx.lineTo(x, y - puzzleRectHeight);
 
       if (left === 1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - puzzleRectHeight + (holeSize / 2), x - holeSize, y - halfPieceHeight);
-        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize - halfPieceHeight, x, y - pieceHeight + puzzleRectHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - puzzleRectHeight +
+            (holeSize / 2), x - holeSize, y - halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x - holeSize, y - holeSize - halfPieceHeight,
+            x, y - pieceHeight + puzzleRectHeight);
       }
 
       if (left === -1) {
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - puzzleRectHeight + (holeSize / 2), x + holeSize, y - halfPieceHeight);
-        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize - halfPieceHeight, x, y - pieceHeight + puzzleRectHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - puzzleRectHeight +
+            (holeSize / 2), x + holeSize, y - halfPieceHeight);
+        PUZZLEYAP.ctx.quadraticCurveTo(x + holeSize, y - holeSize - halfPieceHeight,
+            x, y - pieceHeight + puzzleRectHeight);
       }
 
-      y -= pieceHeight;
-      PUZZLEYAP.ctx.lineTo(x, y);
-      //canvas.fillStroke();
-      //PUZZLEYAP.ctx.stroke();
-      //PUZZLEYAP.ctx.closePath();
-
+      PUZZLEYAP.ctx.closePath();
     }
 
-    function drawFinalImage(index, destX, destY, destWidth, destHeight, up, down, left, right) {
+    function drawFinalImage(index, dX, dY, dWidth, dHeight, up, down, left, right) {
       var srcX = (index % TOTAL_COLUMNS) * BLOCK_WIDTH + PUZZLEYAP.cameraImage.x,
-        srcY = Math.floor(index / TOTAL_COLUMNS) * BLOCK_HEIGHT + PUZZLEYAP.cameraImage.y,
+        srcY = Math.floor(index / TOTAL_COLUMNS) * BLOCK_HEIGHT +
+            PUZZLEYAP.cameraImage.y,
         holeSizeWidth = BLOCK_WIDTH / 4,
         holeSizeHeight = BLOCK_HEIGHT / 4;
 
@@ -1167,14 +1104,18 @@
       PUZZLEYAP.ctx.save();
 
       // Create the puzzle piece
-      drawJigsawPiece(destX + holeSizeWidth, destY + holeSizeHeight, destWidth, destHeight, up, down, left, right);
+      drawJigsawPiece(dX + holeSizeWidth, dY + holeSizeHeight, dWidth, dHeight,
+          up, down, left, right);
 
       // Clip to the current path
       PUZZLEYAP.ctx.clip();
 
-      PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, srcX - holeSizeWidth, srcY - holeSizeHeight, BLOCK_WIDTH + holeSizeWidth * 2, BLOCK_HEIGHT + holeSizeHeight * 2, destX, destY, destWidth + holeSizeWidth * 2, destHeight + holeSizeHeight * 2);
+      PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, srcX - holeSizeWidth,
+          srcY - holeSizeHeight, BLOCK_WIDTH + holeSizeWidth * 2,
+          BLOCK_HEIGHT + holeSizeHeight * 2, dX, dY,
+          dWidth + holeSizeWidth * 2, dHeight + holeSizeHeight * 2);
 
-      //PUZZLEYAP.ctx.rect(destX, destY, destWidth, destHeight);
+      //PUZZLEYAP.ctx.rect(dX, dY, dWidth, dHeight);
       //PUZZLEYAP.ctx.stroke();
 
       // Undo the clipping
@@ -1182,7 +1123,8 @@
     }
 
     function drawImageBlock(imgBlock) {
-      drawFinalImage(imgBlock.no, imgBlock.x, imgBlock.y, BLOCK_WIDTH, BLOCK_HEIGHT, imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
+      drawFinalImage(imgBlock.no, imgBlock.x, imgBlock.y, BLOCK_WIDTH, BLOCK_HEIGHT,
+          imgBlock.up, imgBlock.down, imgBlock.left, imgBlock.right);
     }
 
     function drawAllImages() {
@@ -1245,11 +1187,10 @@
         //DrawGame();
 
         if (isFinished()) {
-          alert("SE ACABÓ");
+          alert("¡Felicidades, has completado el puzzle!");
         }
 
       }
-
     };
 
     this.onEnter = function () {
@@ -1260,17 +1201,13 @@
         textX;
 
       PUZZLEYAP.isPlaying = true;
-      //
       // Inicializar variables
       setImageBlock();
-      // this.draw ==
-
 
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
       textX = PUZZLEYAP.Helpers.HALFWIDTH - textWidth;
       //PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
-
 
     };
 
@@ -1284,13 +1221,7 @@
       PUZZLEYAP.isPlaying = false;
     };
 
-    this.update = function () {
-      _.each(stateElements, function (element) {
-        element.update();
-      });
-
-      //handle events
-    };
+    this.update = function () {};
 
     this.render = function () {
       PUZZLEYAP.Draw.clear();
@@ -1298,7 +1229,9 @@
         element.draw();
       });
       PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
-      PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x, topBarHeight + verticalMargin, PUZZLEYAP.buttonSettings.width, PUZZLEYAP.Helpers.HALFHEIGHT);
+      PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x,
+          topBarHeight + verticalMargin, PUZZLEYAP.buttonSettings.width,
+          PUZZLEYAP.Helpers.HALFHEIGHT);
 
       //PUZZLEYAP.Draw.puzzlePieces();
       drawAllImages();
@@ -1313,7 +1246,8 @@
 
   // Inicializa el juego cuando esté todo listo
   win.onload = function () {
-    win.puzzleyap = PUZZLEYAP;
+    // Esto con el fin de debuguear
+    // win.puzzleyap = PUZZLEYAP;
     PUZZLEYAP.init();
   };
 
