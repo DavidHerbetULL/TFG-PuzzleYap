@@ -794,7 +794,7 @@
       readyMenuButton.handler = function () {
         PUZZLEYAP.Input.unsetTapped();
         PUZZLEYAP.gameState.pop();
-        PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.easy));
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.DifficultySelectionState());
       };
 
       stateElements.push(backMenuButton, readyMenuButton);
@@ -833,6 +833,93 @@
         PUZZLEYAP.Draw.rotatedImage(PUZZLEYAP.cameraImage.picture, halfWidth,
             halfHeight, 90, PUZZLEYAP.cameraImage.width, PUZZLEYAP.cameraImage.height);
       }
+    };
+  };
+
+  PUZZLEYAP.DifficultySelectionState = function () {
+    var stateElements = [];
+
+    this.onEnter = function () {
+      console.log("Entrando en: DifficultySelectionState");
+      var name = "Seleccionar dificultad",
+        buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
+        buttonY = bitWise(buttonSpace / 2),
+        fontSize = PUZZLEYAP.Helpers.getProperFont(35),
+        topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
+        textWidth,
+        textX,
+        textY,
+        easyMenuButton,
+        mediumMenuButton,
+        hardMenuButton;
+
+
+      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
+
+      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
+      textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
+      textX = PUZZLEYAP.Helpers.HALFWIDTH - textWidth;
+      textY = bitWise(topBarHeight / 2 + fontSize / 4);
+      PUZZLEYAP.Draw.text(name, textX, textY, fontSize, "#fff");
+
+      // MENU BUTTOMS
+      easyMenuButton = new PUZZLEYAP.UIObject.Button("Fácil",
+          PUZZLEYAP.buttonSettings.x,
+          buttonY + buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
+
+      mediumMenuButton = new PUZZLEYAP.UIObject.Button("Media",
+          PUZZLEYAP.buttonSettings.x,
+          buttonY + 2 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
+
+      hardMenuButton = new PUZZLEYAP.UIObject.Button("Dificil",
+          PUZZLEYAP.buttonSettings.x,
+          buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
+
+      // MENU HANDLERS
+      easyMenuButton.handler = function () {
+        PUZZLEYAP.Input.reset();
+        PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.easy));
+      };
+
+      mediumMenuButton.handler = function () {
+        PUZZLEYAP.Input.reset();
+        PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.medium));
+      };
+
+      hardMenuButton.handler = function () {
+        PUZZLEYAP.Input.reset();
+        PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.hard));
+      };
+
+      stateElements.push(easyMenuButton, mediumMenuButton, hardMenuButton);
+
+    };
+
+    this.onExit = function () {
+      _.each(stateElements, function (element) {
+        if (element.unsetHandler) {
+          element.unsetHandler();
+        }
+      });
+      PUZZLEYAP.Draw.clear();
+    };
+
+    this.update = function () {
+      _.each(stateElements, function (element) {
+        element.update();
+      });
+    };
+
+    this.render = function () {
+      _.each(stateElements, function (element) {
+        element.draw();
+      });
     };
   };
 
