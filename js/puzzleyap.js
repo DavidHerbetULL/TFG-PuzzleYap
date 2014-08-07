@@ -838,7 +838,7 @@
 
   PUZZLEYAP.PlayState = function (board) {
     var stateElements = [],
-      name = "Jugar",
+      name = "PuzzleYap PlayState",
       BLOCK_IMG_WIDTH = PUZZLEYAP.cameraImage.width,
       BLOCK_IMG_HEIGHT = PUZZLEYAP.cameraImage.height,
       TOTAL_ROWS = board.totalRows,
@@ -847,10 +847,15 @@
       BLOCK_WIDTH = bitWise(BLOCK_IMG_WIDTH / TOTAL_COLUMNS),
       BLOCK_HEIGHT = bitWise(BLOCK_IMG_HEIGHT / TOTAL_ROWS),
       topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
+      thirdTopBarHeight = bitWise(topBarHeight / 3),
       verticalMargin = bitWise(PUZZLEYAP.HEIGHT / 16),
       imageBlockList = [],
       blockList = [],
-      selectedBlock = null;
+      selectedBlock = null,
+      leftTopBarMargin = bitWise(PUZZLEYAP.WIDTH / 16),
+      titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
+      subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(25),
+      halfTextWidth;
 
     function ImageBlock(no, x, y, up, down, left, right) {
       this.no = no;
@@ -1197,19 +1202,21 @@
 
     this.onEnter = function () {
       // LAS INICIALIZACIONES DEL PUZZLE Y SUS ELEMENTOS VAN AQUÍ
-      console.log("Entrando en: playState");
+      console.log("Entrando en: PlayState");
       var fontSize = PUZZLEYAP.Helpers.getProperFont(48),
-        textWidth,
-        textX;
+        textWidth;
 
       PUZZLEYAP.isPlaying = true;
       // Inicializar variables
       setImageBlock();
 
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
-      textX = PUZZLEYAP.Helpers.HALFWIDTH - textWidth;
       //PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
+      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
+
+
+      PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x,
+          topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
+          PUZZLEYAP.cameraImage.height);
 
     };
 
@@ -1223,7 +1230,11 @@
       PUZZLEYAP.isPlaying = false;
     };
 
-    this.update = function () {};
+    this.update = function () {
+      _.each(stateElements, function (element) {
+        element.update();
+      });
+    };
 
     this.render = function () {
       PUZZLEYAP.Draw.clear();
@@ -1231,6 +1242,12 @@
         element.draw();
       });
       PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
+
+      PUZZLEYAP.ctx.font = "bold " + titleFontSize + "px Monospace";
+      halfTextWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
+      PUZZLEYAP.Draw.text(name, PUZZLEYAP.Helpers.HALFWIDTH - halfTextWidth,
+          thirdTopBarHeight + bitWise(titleFontSize / 4), titleFontSize, "#fff");
+
       PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x,
           topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
           PUZZLEYAP.cameraImage.height);
