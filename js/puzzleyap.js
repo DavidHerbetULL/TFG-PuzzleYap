@@ -853,8 +853,11 @@
       blockList = [],
       selectedBlock = null,
       leftTopBarMargin = bitWise(PUZZLEYAP.WIDTH / 16),
+      rightTopBarMargin = PUZZLEYAP.WIDTH - leftTopBarMargin,
       titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
       subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(15),
+      subtitleTextY = bitWise(topBarHeight - thirdTopBarHeight / 2 +
+          subtitleFontSize / 4),
       movements = 0,
       halfTextWidth;
 
@@ -1203,11 +1206,62 @@
       }
     };
 
+    function PlayTimer() {
+      var secCounter = 0,
+        minCounter = 0,
+        hourCounter = 0,
+        fontSize = PUZZLEYAP.Helpers.getProperFont(15),
+        textWidth,
+        textX,
+        crono,
+        sec,
+        min,
+        hour,
+        temp;
+
+      this.setStringProperties = function () {
+        var text = 'Tiempo: 00:00:00';
+        PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
+        textWidth = PUZZLEYAP.ctx.measureText(text).width;
+        textX = rightTopBarMargin - textWidth;
+      };
+
+      this.draw = function () {
+        sec = (secCounter < 10) ? '0' + secCounter : secCounter;
+        min = (minCounter < 10) ? '0' + minCounter : minCounter;
+        hour = (hourCounter < 10) ? '0' + hourCounter : hourCounter;
+        temp = 'Tiempo: ' + hour + ':' + min + ':' + sec;
+
+        PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
+        PUZZLEYAP.Draw.text(temp, textX, subtitleTextY, subtitleFontSize, "#fff");
+      };
+
+      this.setCounter = function () {
+        crono = setInterval(function () {
+          if (secCounter === 60) {
+            secCounter = 0;
+            minCounter += 1;
+
+            if (minCounter === 60) {
+              minCounter = 0;
+              hourCounter += 1;
+            }
+          }
+          secCounter += 1;
+
+        }, 1000);
+      };
+
+      this.unsetCounter = function () {
+        clearInterval(crono);
+      };
+    }
+
     this.onEnter = function () {
       // LAS INICIALIZACIONES DEL PUZZLE Y SUS ELEMENTOS VAN AQUÍ
       console.log("Entrando en: PlayState");
       var fontSize = PUZZLEYAP.Helpers.getProperFont(48),
-        textWidth;
+        timer = new PlayTimer();
 
       PUZZLEYAP.isPlaying = true;
       // Inicializar variables
@@ -1221,6 +1275,9 @@
           topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
           PUZZLEYAP.cameraImage.height);
 
+      timer.setStringProperties();
+      timer.setCounter();
+      stateElements.push(timer);
     };
 
     this.onExit = function () {
@@ -1235,15 +1292,14 @@
 
     this.update = function () {
       _.each(stateElements, function (element) {
-        element.update();
+        if (element.update) {
+          element.update();
+        }
       });
     };
 
     this.render = function () {
       PUZZLEYAP.Draw.clear();
-      _.each(stateElements, function (element) {
-        element.draw();
-      });
       PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
 
       PUZZLEYAP.ctx.font = "bold " + titleFontSize + "px Monospace";
@@ -1253,9 +1309,11 @@
 
       PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
       PUZZLEYAP.Draw.text('Movimientos: ' + movements, leftTopBarMargin,
-          bitWise(topBarHeight - thirdTopBarHeight / 2 + subtitleFontSize / 4),
-          subtitleFontSize, "#fff");
+          subtitleTextY, subtitleFontSize, "#fff");
 
+      _.each(stateElements, function (element) {
+        element.draw();
+      });
 
       PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x,
           topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
