@@ -854,7 +854,8 @@
       selectedBlock = null,
       leftTopBarMargin = bitWise(PUZZLEYAP.WIDTH / 16),
       titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
-      subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(25),
+      subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(15),
+      movements = 0,
       halfTextWidth;
 
     function ImageBlock(no, x, y, up, down, left, right) {
@@ -1157,6 +1158,7 @@
 
       if (selectedBlock) {
         imageBlockList[selectedBlock.no].isSelected = true;
+        movements += 1;
       }
     };
 
@@ -1194,7 +1196,8 @@
         //DrawGame();
 
         if (isFinished()) {
-          alert("¡Felicidades, has completado el puzzle!");
+          alert("¡Felicidades, has completado el puzzle en " + movements +
+              " movimientos!");
         }
 
       }
@@ -1247,6 +1250,12 @@
       halfTextWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
       PUZZLEYAP.Draw.text(name, PUZZLEYAP.Helpers.HALFWIDTH - halfTextWidth,
           thirdTopBarHeight + bitWise(titleFontSize / 4), titleFontSize, "#fff");
+
+      PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
+      PUZZLEYAP.Draw.text('Movimientos: ' + movements, leftTopBarMargin,
+          bitWise(topBarHeight - thirdTopBarHeight / 2 + subtitleFontSize / 4),
+          subtitleFontSize, "#fff");
+
 
       PUZZLEYAP.Draw.gameCells(board, PUZZLEYAP.buttonSettings.x,
           topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
