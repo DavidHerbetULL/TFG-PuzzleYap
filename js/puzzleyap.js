@@ -1237,6 +1237,14 @@
       }
     }
 
+    function drawFinishScreen() {
+      var movString = movements + ' movimientos',
+        timeString = _.first(stateElements).timeString();
+
+      PUZZLEYAP.gameState.pop();
+      PUZZLEYAP.gameState.push(new PUZZLEYAP.FinishState(movString, timeString));
+    }
+
     this.handleGetPuzzlePiece = function (input) {
 
       // remove old selected
@@ -1286,8 +1294,10 @@
         //DrawGame();
 
         if (isFinished()) {
-          alert("¡Felicidades, has completado el puzzle en " + movements +
-              " movimientos!");
+          this.render();
+          //alert("¡Felicidades, has completado el puzzle en " + movements +
+          //    " movimientos!");
+          drawFinishScreen();
         }
 
       }
@@ -1342,6 +1352,51 @@
       this.unsetCounter = function () {
         clearInterval(crono);
       };
+
+      this.timeString = function () {
+        var strSec,
+          strMin,
+          strHour;
+
+        switch (secCounter) {
+        case 0:
+          strSec = '';
+          break;
+        case 1:
+          strSec = secCounter + ' segundo';
+          break;
+        default:
+          strSec = secCounter + ' segundos';
+          break;
+        }
+
+        switch (minCounter) {
+        case 0:
+          strMin = '';
+          break;
+        case 1:
+          strMin = minCounter + ' minuto, ';
+          break;
+        default:
+          strMin = minCounter + ' minutos, ';
+          break;
+        }
+
+        switch (hourCounter) {
+        case 0:
+          strHour = '';
+          break;
+        case 1:
+          strHour = hourCounter + ' hora, ';
+          break;
+        default:
+          strHour = hourCounter + ' horas, ';
+          break;
+        }
+
+        return strHour + strMin + strSec;
+
+      };
     }
 
     this.onEnter = function () {
@@ -1373,8 +1428,8 @@
           element.unsetHandler();
         }
       });
-      PUZZLEYAP.Draw.clear();
       PUZZLEYAP.isPlaying = false;
+      _.first(stateElements).unsetCounter();
     };
 
     this.update = function () {
@@ -1416,6 +1471,114 @@
     };
 
   };
+
+  PUZZLEYAP.FinishState = function (movements, time) {
+    var stateElements = [];
+
+
+    this.onEnter = function () {
+      console.log("Entrando en: FinishState");
+      var halfWidth = PUZZLEYAP.Helpers.HALFWIDTH,
+        congratsText = "¡Enhorabuena!",
+        congratsText2 = "Has ganado con " + movements + " en " + time,
+        actionText = "¿Qué desea hacer?",
+        topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
+        thirdTopBarHeight = bitWise(topBarHeight / 3),
+        buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
+        buttonY = bitWise(buttonSpace / 2),
+        fontSize = PUZZLEYAP.Helpers.getProperFont(24),
+        titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
+        subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(12),
+        textY = bitWise(topBarHeight / 2 + fontSize / 4),
+        subtitleTextY = bitWise(topBarHeight - thirdTopBarHeight / 2 +
+            subtitleFontSize / 4),
+        verticalMargin = bitWise(PUZZLEYAP.HEIGHT / 16),
+        textWidth,
+        textX,
+        backMenuButton,
+        readyMenuButton,
+        img;
+
+      PUZZLEYAP.ctx.globalAlpha = 0.9;
+      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.HEIGHT, "black", null);
+
+      PUZZLEYAP.ctx.globalAlpha = 1;
+      PUZZLEYAP.ctx.font = "bold " + titleFontSize + "px Monospace";
+      textWidth = bitWise(PUZZLEYAP.ctx.measureText(congratsText).width / 2);
+      textX = halfWidth - textWidth;
+      PUZZLEYAP.Draw.text(congratsText, textX,
+          thirdTopBarHeight + bitWise(titleFontSize / 4), titleFontSize, "#fff");
+
+      PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
+      textWidth = bitWise(PUZZLEYAP.ctx.measureText(congratsText2).width / 2);
+      textX = halfWidth - textWidth;
+      PUZZLEYAP.Draw.text(congratsText2, textX, subtitleTextY, subtitleFontSize, "#fff");
+
+      PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, PUZZLEYAP.buttonSettings.x,
+          PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width,
+          PUZZLEYAP.cameraImage.height, PUZZLEYAP.cameraImage.x,
+          topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
+          PUZZLEYAP.cameraImage.height);
+
+
+      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
+      textWidth = bitWise(PUZZLEYAP.ctx.measureText(actionText).width / 2);
+      textX = halfWidth - textWidth;
+      textY = buttonY + 3 * buttonSpace - PUZZLEYAP.buttonSettings.height;
+      PUZZLEYAP.Draw.text(actionText, textX, textY, fontSize, "#fff");
+
+      // MENU BUTTOMS
+      readyMenuButton = new PUZZLEYAP.UIObject.Button("Jugar otra",
+          PUZZLEYAP.buttonSettings.x + bitWise(PUZZLEYAP.buttonSettings.width / 2),
+          buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
+
+      backMenuButton = new PUZZLEYAP.UIObject.Button("Ir al Menú",
+          PUZZLEYAP.buttonSettings.x,
+          buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
+
+
+      // MENU HANDLERS
+      readyMenuButton.handler = function () {
+        PUZZLEYAP.Input.unsetTapped();
+        PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.CaptureImageState());
+      };
+
+      backMenuButton.handler = function () {
+        PUZZLEYAP.Input.reset();
+        PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
+      };
+
+      stateElements.push(backMenuButton, readyMenuButton);
+
+    };
+
+    this.onExit = function () {
+      _.each(stateElements, function (element) {
+        if (element.unsetHandler) {
+          element.unsetHandler();
+        }
+      });
+      PUZZLEYAP.Draw.clear();
+    };
+
+    this.update = function () {
+      _.each(stateElements, function (element) {
+        element.update();
+      });
+    };
+
+    this.render = function () {
+      _.each(stateElements, function (element) {
+        element.draw();
+      });
+    };
+
+  };
+
 
   // Inicializa el juego cuando esté todo listo
   win.onload = function () {
