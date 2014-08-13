@@ -3,3 +3,6 @@ node_modules/*
 
 # Ignore build directory
 build/*
+
+# Ignore brackets IDE stuff
+.brackets*
