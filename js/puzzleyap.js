@@ -1,4 +1,4 @@
-/*jslint nomen: true, browser: true, devel: true, bitwise: true*/
+/*jslint nomen: true, browser: true, devel: true, bitwise: true, plusplus: true*/
 /*global _, CocoonJS, requestAnimFrame, cancelAnimFrame*/
 
 (function () {
@@ -698,8 +698,8 @@
 
       // MENU HANDLERS
       backMenuButton.handler = function () {
-        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
       };
 
@@ -786,14 +786,14 @@
 
       // MENU HANDLERS
       backMenuButton.handler = function () {
-        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.MainMenuState());
       };
 
       readyMenuButton.handler = function () {
-        PUZZLEYAP.Input.unsetTapped();
         PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.DifficultySelectionState());
       };
 
@@ -880,20 +880,21 @@
 
       // MENU HANDLERS
       easyMenuButton.handler = function () {
-        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.easy));
       };
 
       mediumMenuButton.handler = function () {
-        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
-        PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.medium));
+        PUZZLEYAP.Input.reset();
+        PUZZLEYAP.gameState.push(new PUZZLEYAP
+            .PlayState(PUZZLEYAP.gameDifficulty.medium));
       };
 
       hardMenuButton.handler = function () {
-        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.pop();
+        PUZZLEYAP.Input.reset();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(PUZZLEYAP.gameDifficulty.hard));
       };
 
@@ -1473,8 +1474,108 @@
   };
 
   PUZZLEYAP.FinishState = function (movements, time) {
-    var stateElements = [];
+    var stateElements = [],
+      topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
+      verticalMargin = bitWise(PUZZLEYAP.HEIGHT / 16),
+      step,
+      swirlAnimationID;
 
+
+    // http://geekofficedog.blogspot.com.es/2013/04/hello-swirl-swirl-effect-tutorial-in.html
+
+    // This renders the 'imageData' parameter into the canvas
+    function drawPixels(imageData) {
+      PUZZLEYAP.ctx.putImageData(imageData, PUZZLEYAP.cameraImage.x,
+          topBarHeight + verticalMargin);
+    }
+    // Copy the pixels of the 'srcPixels' ImageData parameter
+    // into the 'dstPixels' parameter
+    function copyImageData(srcPixels, dstPixels, width, height) {
+      var x, y, position,
+        zero = 0;
+      for (y = 0; y < height; ++y) {
+        for (x = 0; x < width; ++x) {
+          position = y * width + x;
+          position *= 4;
+          dstPixels[position + zero] = srcPixels[position + zero];
+          dstPixels[position + 1] = srcPixels[position + 1];
+          dstPixels[position + 2] = srcPixels[position + 2];
+          dstPixels[position + 3] = srcPixels[position + 3];
+        }
+      }
+    }
+
+    function swirlAnimated(originalImageData) {
+
+      var x, y, width, height, size, radius, centerX, centerY,
+        sourceImgData = originalImageData,
+        destImgData = PUZZLEYAP.ctx.createImageData(sourceImgData.width,
+            sourceImgData.height),
+        srcPixels = sourceImgData.data,
+        dstPixels = destImgData.data;
+
+      width = sourceImgData.width;
+      height = sourceImgData.height;
+
+      centerX = Math.floor(width / 2);
+      centerY = Math.floor(height / 2);
+      size = width < height ? width : height;
+      radius = Math.floor(size / 3);
+      copyImageData(srcPixels, dstPixels, width, height);
+
+      drawPixels(destImgData);
+
+      function animate(step) {
+        var r, alpha, angle, sourcePosition, destPosition, newX, newY,
+          degrees, delayBetweenFrames,
+          radiusSquared = radius * radius,
+          zero = 0;
+        for (y = -radius; y < radius; ++y) {
+          for (x = -radius; x < radius; ++x) {
+            if (x * x + y * y <= radius * radius) {
+              r = Math.sqrt(x * x + y * y);
+              alpha = Math.atan2(y, x);
+
+              destPosition = (y + centerY) * width + x + centerX;
+              destPosition *= 4;
+
+              degrees = (alpha * 180.0) / Math.PI;
+              degrees += r * 10 * step;
+
+              alpha = (degrees * Math.PI) / 180.0;
+              newY = Math.floor(r * Math.sin(alpha));
+              newX = Math.floor(r * Math.cos(alpha));
+              sourcePosition = (newY + centerY) * width + newX + centerX;
+              sourcePosition *= 4;
+
+              dstPixels[destPosition + zero] = srcPixels[sourcePosition + zero];
+              dstPixels[destPosition + 1] = srcPixels[sourcePosition + 1];
+              dstPixels[destPosition + 2] = srcPixels[sourcePosition + 2];
+              dstPixels[destPosition + 3] = srcPixels[sourcePosition + 3];
+            }
+          }
+        }
+        drawPixels(destImgData);
+
+        // If the step parameter is almost zero
+        // (a direct comparison againts zero should be avoided as floating point values
+        // may acumulate error during operations)
+        if (Math.abs(step) < 0.000001) {
+          delayBetweenFrames = 1000;
+        } else {
+          delayBetweenFrames = 10;
+        }
+
+        swirlAnimationID = setTimeout(function () {
+          animate(step - 0.002);
+        }, delayBetweenFrames);
+
+        if (step < -0.1) {
+          clearTimeout(swirlAnimationID);
+        }
+      }
+      animate(0);
+    }
 
     this.onEnter = function () {
       console.log("Entrando en: FinishState");
@@ -1482,7 +1583,6 @@
         congratsText = "¡Enhorabuena!",
         congratsText2 = "Has ganado con " + movements + " en " + time,
         actionText = "¿Qué desea hacer?",
-        topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
         thirdTopBarHeight = bitWise(topBarHeight / 3),
         buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
         buttonY = bitWise(buttonSpace / 2),
@@ -1492,12 +1592,11 @@
         textY = bitWise(topBarHeight / 2 + fontSize / 4),
         subtitleTextY = bitWise(topBarHeight - thirdTopBarHeight / 2 +
             subtitleFontSize / 4),
-        verticalMargin = bitWise(PUZZLEYAP.HEIGHT / 16),
         textWidth,
         textX,
         backMenuButton,
         readyMenuButton,
-        img;
+        imgData;
 
       PUZZLEYAP.ctx.globalAlpha = 0.9;
       PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.HEIGHT, "black", null);
@@ -1519,6 +1618,12 @@
           PUZZLEYAP.cameraImage.height, PUZZLEYAP.cameraImage.x,
           topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
           PUZZLEYAP.cameraImage.height);
+
+      // Aplicar efecto
+      imgData = PUZZLEYAP.ctx.getImageData(PUZZLEYAP.cameraImage.x,
+          topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
+          PUZZLEYAP.cameraImage.height);
+      swirlAnimated(imgData);
 
 
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
@@ -1562,6 +1667,7 @@
           element.unsetHandler();
         }
       });
+      clearTimeout(swirlAnimationID);
       PUZZLEYAP.Draw.clear();
     };
 
