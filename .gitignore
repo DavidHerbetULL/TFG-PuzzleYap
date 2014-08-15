@@ -6,3 +6,6 @@ build/*
 
 # Ignore brackets IDE stuff
 .brackets*
+
+# Ignore test files
+test/*
