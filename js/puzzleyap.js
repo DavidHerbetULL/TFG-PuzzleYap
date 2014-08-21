@@ -28,6 +28,7 @@
       HEIGHT: bitWise(browserHeight * devicePixelRatio),
       offset: {top: 0, left: 0},
       fontBase: 480,
+      insideCocoonJS: navigator.isCocoonJS,
 
       canvas: null,
       ctx: null,
@@ -1619,11 +1620,13 @@
           topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
           PUZZLEYAP.cameraImage.height);
 
-      // Aplicar efecto
-      imgData = PUZZLEYAP.ctx.getImageData(PUZZLEYAP.cameraImage.x,
-          topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
-          PUZZLEYAP.cameraImage.height);
-      swirlAnimated(imgData);
+      // Aplicar efecto si no estamos en el móvil
+      if (!PUZZLEYAP.insideCocoonJS) {
+        imgData = PUZZLEYAP.ctx.getImageData(PUZZLEYAP.cameraImage.x,
+            topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
+            PUZZLEYAP.cameraImage.height);
+        swirlAnimated(imgData);
+      }
 
 
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
