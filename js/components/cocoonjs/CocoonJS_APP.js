@@ -155,8 +155,10 @@
                 return window.parent.eval(javaScriptCode);
             }
             else {
-                //return window.parent.frames['CocoonJS_App_ForCocoonJS_WebViewIFrame'].window.eval(javaScriptCode);
-                return window.frames['CocoonJS_App_ForCocoonJS_WebViewIFrame'].window.eval(javaScriptCode);
+                var frame = window.parent.frames['CocoonJS_App_ForCocoonJS_WebViewIFrame'];
+                if (frame) {
+                    return frame.window.eval(javaScriptCode);
+                }
             }
         }
     };
@@ -178,13 +180,19 @@
             }
         }
         else {
-            if (window.name == 'CocoonJS_App_ForCocoonJS_WebViewIFrame') {
-                return window.parent.eval(javaScriptCode);
-            }
-            else {
-                return window.parent.frames['CocoonJS_App_ForCocoonJS_WebViewIFrame'].window.eval(javaScriptCode);
-                // window.frames['CocoonJS_App_ForCocoonJS_WebViewIFrame'].window.eval(javaScriptCode);
-            }
+            setTimeout(function() {
+                var res;
+                if (window.name == 'CocoonJS_App_ForCocoonJS_WebViewIFrame') {
+                    res = window.parent.eval(javaScriptCode);
+                }
+                else {
+                    var frame = window.parent.frames['CocoonJS_App_ForCocoonJS_WebViewIFrame'];
+                    if (frame) {
+                        res = frame.window.eval(javaScriptCode);
+                    }
+                }
+                typeof(returnCallback) === "function" && returnCallback.call(this, res);
+            }, 1);
         }
     };
 
@@ -332,6 +340,20 @@
     }
 
     /**
+     * Opens a given share native window to share some specific text content in any system specific social sharing options. For example, Twitter, Facebook, SMS, Mail, ...
+     * @function
+     * @param {string} textToShare The text content that will be shared.
+     */
+    CocoonJS.App.share = function(textToShare) {
+        if (CocoonJS.App.nativeExtensionObjectAvailable) {
+            return CocoonJS.makeNativeExtensionObjectFunctionCall("IDTK_APP", "share", arguments, true);
+        }
+        else {
+            // TODO: Is there something we could do to share in a browser?
+        }
+    }
+
+    /**
      * Forces the app to be finished.
      * @function
      */
@@ -346,7 +368,7 @@
 
     /**
      * Enables or disables the auto lock to control if the screen keeps on after an inactivity period.
-     * When the auto lock is enabled and the application has no user input for a short period, the system puts the device into a "sleep” state where the screen dims or turns off.
+     * When the auto lock is enabled and the application has no user input for a short period, the system puts the device into a "sleepâ€ state where the screen dims or turns off.
      * When the auto lock is disabled the screen keeps on even when there is no user input for long times.
      * @param enabled A boolean value that controls whether to enable or disable the auto lock.
      */
@@ -378,6 +400,25 @@
         return screenCanvas;
     };
 
+    CocoonJS.App.addADivToDisableInput = function() {
+        var div = document.createElement("div");
+        div.id = "CocoonJSInputBlockingDiv";
+        div.style.left = 0;
+        div.style.top = 0;
+        div.style.width = "100%";
+        div.style.height = "100%";
+        div.style.position = "absolute";
+        div.style.backgroundColor = 'transparent';
+        div.style.border = "0px solid #000";
+        div.style.zIndex = 999999999;
+        document.body.appendChild(div);
+    };
+
+    CocoonJS.App.removeTheDivToEnableInput = function() {
+        var div = document.getElementById("CocoonJSInputBlockingDiv");
+        if (div) document.body.removeChild(div);
+    };
+
     /**
      * Disables the touch events in the CocoonJS environment.
      * @function
@@ -385,6 +426,15 @@
     CocoonJS.App.disableTouchInCocoonJS = function () {
         if (CocoonJS.App.nativeExtensionObjectAvailable) {
             window.ext.IDTK_APP.makeCall("disableTouchLayer", "CocoonJSView");
+        }
+        else if (!navigator.isCocoonJS) {
+            if (!CocoonJS.App.EmulatedWebViewIFrame) {
+                CocoonJS.App.forwardEventsToCocoonJSEnabled = false;
+                CocoonJS.App.forwardAsync("CocoonJS && CocoonJS.App && CocoonJS.App.disableTouchInCocoonJS();");
+            }
+            else {
+                // CocoonJS.App.addADivToDisableInput();
+            }
         }
     };
 
@@ -396,6 +446,15 @@
         if (CocoonJS.App.nativeExtensionObjectAvailable) {
             window.ext.IDTK_APP.makeCall("enableTouchLayer", "CocoonJSView");
         }
+        else if (!navigator.isCocoonJS) {
+            if (!CocoonJS.App.EmulatedWebViewIFrame) {
+                CocoonJS.App.forwardEventsToCocoonJSEnabled = true;
+                CocoonJS.App.forwardAsync("CocoonJS && CocoonJS.App.enableTouchInCocoonJS();");
+            }
+            else {
+                // CocoonJS.App.removeTheDivToEnableInput();
+            }
+        }
     };
 
     /**
@@ -406,6 +465,14 @@
         if (CocoonJS.App.nativeExtensionObjectAvailable) {
             window.ext.IDTK_APP.makeCall("disableTouchLayer", "WebView");
         }
+        else if (!navigator.isCocoonJS) {
+            if (!CocoonJS.App.EmulatedWebViewIFrame) {
+                CocoonJS.App.addADivToDisableInput();
+            }
+            else {
+                CocoonJS.App.forwardAsync("CocoonJS && CocoonJS.App.disableTouchInTheWebView();");
+            }
+        }
     };
 
     /**
@@ -415,6 +482,14 @@
     CocoonJS.App.enableTouchInTheWebView = function () {
         if (CocoonJS.App.nativeExtensionObjectAvailable) {
             window.ext.IDTK_APP.makeCall("enableTouchLayer", "WebView");
+        }
+        else if (!navigator.isCocoonJS) {
+            if (!CocoonJS.App.EmulatedWebViewIFrame) {
+                CocoonJS.App.removeTheDivToEnableInput();
+            }
+            else {
+                CocoonJS.App.forwardAsync("CocoonJS && CocoonJS.App.enableTouchInTheWebView();");
+            }
         }
     };
 
