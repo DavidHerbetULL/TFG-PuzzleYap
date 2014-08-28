@@ -86,7 +86,7 @@
             e.preventDefault();
             PUZZLEYAP.Input.setTapped(e);
             if (PUZZLEYAP.isPlaying) {
-              PUZZLEYAP.gameState.currentState().handleGetPuzzlePiece(PUZZLEYAP.Input);
+              PUZZLEYAP.Jigsaw.handleGetPuzzlePiece(PUZZLEYAP.Input);
             }
           }, false);
 
@@ -94,7 +94,7 @@
             e.preventDefault();
             PUZZLEYAP.Input.unsetTapped();
             if (PUZZLEYAP.isPlaying) {
-              PUZZLEYAP.gameState.currentState().handleDropPuzzlePiece(PUZZLEYAP.Input);
+              PUZZLEYAP.Jigsaw.handleDropPuzzlePiece(PUZZLEYAP.Input);
             }
           }, false);
 
@@ -102,7 +102,7 @@
             e.preventDefault();
             PUZZLEYAP.Input.setHovered(e);
             if (PUZZLEYAP.isPlaying) {
-              PUZZLEYAP.gameState.currentState().handleMovePuzzlePiece(PUZZLEYAP.Input);
+              PUZZLEYAP.Jigsaw.handleMovePuzzlePiece(PUZZLEYAP.Input);
             }
           });
 
@@ -123,7 +123,7 @@
               // el cual pasaremos como input
               PUZZLEYAP.Input.setTapped(e.touches[0]);
               if (PUZZLEYAP.isPlaying) {
-                PUZZLEYAP.gameState.currentState().handleGetPuzzlePiece(PUZZLEYAP.Input);
+                PUZZLEYAP.Jigsaw.handleGetPuzzlePiece(PUZZLEYAP.Input);
               }
             }, false);
 
@@ -132,8 +132,7 @@
               // If playing game, pasamos el input
               if (PUZZLEYAP.isPlaying) {
                 PUZZLEYAP.Input.setHovered(e.touches[0]);
-                PUZZLEYAP.gameState.currentState()
-                  .handleMovePuzzlePiece(PUZZLEYAP.Input);
+                PUZZLEYAP.Jigsaw.handleMovePuzzlePiece(PUZZLEYAP.Input);
               }
             }, false);
 
@@ -141,8 +140,7 @@
               e.preventDefault();
               PUZZLEYAP.Input.unsetTapped();
               if (PUZZLEYAP.isPlaying) {
-                PUZZLEYAP.gameState.currentState()
-                  .handleDropPuzzlePiece(PUZZLEYAP.Input);
+                PUZZLEYAP.Jigsaw.handleDropPuzzlePiece(PUZZLEYAP.Input);
               }
             }, false);
 
@@ -1382,6 +1380,7 @@
     },
     drawDispersePieces: function () {
       var text = "¡DISPERSANDO PUZZLE!",
+        text2 = "¡AGITA EL DISPOSITIVO!",
         titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
         halfTopBarHeight = bitWise(PUZZLEYAP.Helpers.topBarHeight / 2),
         pieceNumbers = this.disperseList.length,
@@ -1456,6 +1455,7 @@
       lastX = 0,
       lastY = 0,
       lastZ = 0,
+      dispersionActivated = false,
       intervalID;
 
     function setGravityInput(e) {
@@ -1477,6 +1477,10 @@
       PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.HEIGHT, "black", null);
       PUZZLEYAP.ctx.globalAlpha = 1;
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
+
+      PUZZLEYAP.Jigsaw.init(board);
+      PUZZLEYAP.Jigsaw.setImageBlock();
+      PUZZLEYAP.Jigsaw.dispersePieces();
 
       if (shakeEvent) {
         console.log("Device Motion Disponible");
@@ -1507,25 +1511,8 @@
 
             console.log('Elimnar listener para DeviceMotionEvent');
             window.removeEventListener('devicemotion', setGravityInput, false);
-            PUZZLEYAP.gameState.pop();
-            PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(board));
+            dispersionActivated = true;
           }
-
-//          setTimeout(function () {
-//            var x = PUZZLEYAP.GravityInput.x,
-//              y = PUZZLEYAP.GravityInput.y,
-//              z = PUZZLEYAP.GravityInput.z;
-//            if (x + y + z === 0) {
-//              console.log('El dispositivo dice que soporta Motion, pero no es así.');
-//              console.log('Iniciando manualmente el agite...');
-//              clearInterval(intervalID);
-//
-//              console.log('Elimnar listener para DeviceMotionEvent');
-//              window.removeEventListener('devicemotion', setGravityInput, false);
-//              PUZZLEYAP.gameState.pop();
-//              PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(board));
-//            }
-//          }, 3000);
 
           // Update new position
           lastX = PUZZLEYAP.GravityInput.x;
@@ -1533,7 +1520,23 @@
           lastZ = PUZZLEYAP.GravityInput.z;
         }, 150);
 
+        setTimeout(function () {
+          var x = PUZZLEYAP.GravityInput.x,
+            y = PUZZLEYAP.GravityInput.y,
+            z = PUZZLEYAP.GravityInput.z;
+          if (x + y + z === 0) {
+            console.log('El dispositivo dice que soporta Motion, pero no es así.');
+            console.log('Iniciando manualmente el agite...');
+            clearInterval(intervalID);
+
+            console.log('Elimnar listener para DeviceMotionEvent');
+            window.removeEventListener('devicemotion', setGravityInput, false);
+            dispersionActivated = true;
+          }
+        }, 3000);
+
       } else {
+        console.log("Device Motion NO Disponible");
         textWidth = bitWise(PUZZLEYAP.ctx.measureText(topText2).width / 2);
         textX = halfWidth - textWidth;
         PUZZLEYAP.Draw.text(topText2, textX,
@@ -1543,15 +1546,8 @@
             PUZZLEYAP.cameraImage.height, PUZZLEYAP.cameraImage.x,
             topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
             PUZZLEYAP.cameraImage.height);
-
-        PUZZLEYAP.Jigsaw.init(board);
-        PUZZLEYAP.Jigsaw.setImageBlock();
-        PUZZLEYAP.Jigsaw.dispersePieces();
-//        PUZZLEYAP.gameState.pop();
-//        PUZZLEYAP.Input.reset();
-//        PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(board));
+        dispersionActivated = true;
       }
-
 
 
     };
@@ -1559,14 +1555,18 @@
     this.onExit = function () {};
 
     this.update = function () {
-      PUZZLEYAP.Jigsaw.updateDispersePieces();
+      if (dispersionActivated) {
+        PUZZLEYAP.Jigsaw.updateDispersePieces();
+      }
       if (PUZZLEYAP.Jigsaw.dispersionComplete()) {
         PUZZLEYAP.Jigsaw.dispersionFinished = true;
       }
     };
 
     this.render = function () {
-      PUZZLEYAP.Jigsaw.drawDispersePieces();
+      if (dispersionActivated) {
+        PUZZLEYAP.Jigsaw.drawDispersePieces();
+      }
       if (PUZZLEYAP.Jigsaw.dispersionFinished) {
         PUZZLEYAP.gameState.pop();
         PUZZLEYAP.gameState.push(new PUZZLEYAP.PlayState(board));
