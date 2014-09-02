@@ -1,5 +1,5 @@
 # Prototipo de Juego 2D multiplataforma para móviles
-**Estado:** Desarrollando la version 0.4
+**Estado:** Terminados los prototipos
 
 ## Tabla de contenidos
 - [**¿De qué va este este proyecto?**](#proyecto)
@@ -30,7 +30,7 @@ Para el desarrollo del prototipo se han fijado una serie de objetivos que son lo
 - **Objetivo 1:** Renderizado de una imagen (v0.1) <img src="http://banot.etsii.ull.es/alu4078/WebMercapriceV4/imagenes/success.png" height="17" width="17"></img>
 - **Objetivo 2:** Captura de una imagen con la cámara del dispositivo (v0.2) <img src="http://banot.etsii.ull.es/alu4078/WebMercapriceV4/imagenes/success.png" height="17" width="17"></img>
 - **Objetivo 3:** Fragmentación como puzzle de la imagen y resolución del mismo (v0.3) <img src="http://banot.etsii.ull.es/alu4078/WebMercapriceV4/imagenes/success.png" height="17" width="17"></img>
-- **Objetivo 4:** Aplicación de efectos tras la investigación (v0.4)
+- **Objetivo 4:** Aplicación de efectos tras la investigación (v0.4) <img src="http://banot.etsii.ull.es/alu4078/WebMercapriceV4/imagenes/success.png" height="17" width="17"></img>
 
 ## <a name="desarrollador"></a> Desarrollador
 - David Hernández Bethencourt
