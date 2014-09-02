@@ -1,4 +1,5 @@
 /*jslint nomen: true, browser: true, devel: true, bitwise: true, plusplus: true*/
+
 /*global _, CocoonJS, requestAnimFrame, cancelAnimFrame*/
 
 (function () {
@@ -12,6 +13,7 @@
     browserHeight = win.innerHeight,
     devicePixelRatio = win.devicePizelRatio || 1,
     deviceMotion = win.DeviceMotionEvent,
+    iOS = /.*(iphone|ipod|ipad|ios).*/g.test(navigator.userAgent.toLowerCase()),
 
     // Modo eficiente para evitar coordendas flotantes
     // http://www.html5rocks.com/en/tutorials/canvas/performance/
@@ -29,8 +31,9 @@
       HEIGHT: bitWise(browserHeight * devicePixelRatio),
       offset: {top: 0, left: 0},
       fontBase: 480,
+      iOS: iOS,
       insideCocoonJS: navigator.isCocoonJS,
-      sensitivity: 25,
+      sensitivity: iOS ? 1.5 : 25,
 
       canvas: null,
       ctx: null,
@@ -57,6 +60,10 @@
         console.log("Device pixel ratio: " + this.dips);
         console.log("Pantalla: " + this.currentWidth + "x" + this.currentHeight);
         console.log("Pesolución: " + this.WIDTH + "x" + this.HEIGHT);
+        if (PUZZLEYAP.iOS) {
+          console.log("El dispositivo es iOS");
+        }
+        console.log(navigator.userAgent);
 
         var canvas = document.createElement("canvas");
         canvas.width = this.WIDTH;
@@ -67,8 +74,7 @@
 
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
-
-        PUZZLEYAP.Draw.rect(0, 0, this.canvas.width, this.canvas.height, "#33ff89");
+        PUZZLEYAP.Draw.background();
         document.body.appendChild(this.canvas);
 
         this.offset.top = this.canvas.offsetTop;
@@ -304,7 +310,6 @@
       this.x = (data.pageX - PUZZLEYAP.offset.left) * PUZZLEYAP.dips;
       this.y = (data.pageY - PUZZLEYAP.offset.top) * PUZZLEYAP.dips;
       this.tapped = true;
-      //console.log("[" + this.x + ", " + this.y + "]");
     },
 
     setHovered: function (data) {
@@ -344,14 +349,19 @@
   PUZZLEYAP.Helpers = {
     HALFWIDTH: bitWise(PUZZLEYAP.WIDTH / 2),
     HALFHEIGHT: bitWise(PUZZLEYAP.HEIGHT / 2),
-    topBarHeight: bitWise(PUZZLEYAP.HEIGHT / 8),
+    topBarHeight: bitWise(PUZZLEYAP.HEIGHT * 0.2),
     verticalMargin: bitWise(PUZZLEYAP.HEIGHT / 16),
     leftTopBarMargin: bitWise(PUZZLEYAP.WIDTH / 16),
-
 
     getProperFont: function (fontSize) {
       var ratio = fontSize / PUZZLEYAP.fontBase;
       return bitWise(PUZZLEYAP.WIDTH * ratio);
+    },
+
+    resetTextProperties: function () {
+      // Devolver propiedades a sus valores por defecto
+      PUZZLEYAP.ctx.textBaseline = "alphabetic";
+      PUZZLEYAP.ctx.textAlign = "start";
     },
 
     loadImage: function (source, x, y, width, height) {
@@ -369,6 +379,39 @@
             : randVal.toFixed(floatVal);
 
       return Math.round(val);
+    },
+
+    // http://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+    shade: function (color, percent) {
+      function shadeRGBColor(color, percent) {
+        var f = color.split(","),
+          t = percent < 0 ? 0 : 255,
+          p = percent < 0 ? percent * -1 : percent,
+          R = parseInt(f[0].slice(4)),
+          G = parseInt(f[1]),
+          B = parseInt(f[2]);
+
+        return "rgb(" + (Math.round((t - R) * p) + R) + "," +
+            (Math.round((t - G) * p) + G) + "," + (Math.round((t - B) * p) + B) + ")";
+      }
+
+      function shadeColor2(color, percent) {
+        var f = parseInt(color.slice(1), 16),
+          t = percent < 0 ? 0 : 255,
+          p = percent < 0 ? percent * -1 : percent,
+          R = f >> 16,
+          G = f >> 8 & 0x00FF,
+          B = f & 0x0000FF;
+        return "#" + (0x1000000 + (Math.round((t - R) * p) + R) * 0x10000 +
+            (Math.round((t - G) * p) + G) * 0x100 +
+            (Math.round((t - B) * p) + B)).toString(16).slice(1);
+      }
+
+      if (color.length > 7) {
+        return shadeRGBColor(color, percent);
+      } else {
+        return shadeColor2(color, percent);
+      }
     }
   };
 
@@ -376,9 +419,111 @@
   // Abstraer varias operaciones de canvas en funciones standalone
   PUZZLEYAP.Draw = {
 
+    background: function () {
+      var aux = (PUZZLEYAP.WIDTH <= PUZZLEYAP.HEIGHT) ? PUZZLEYAP.WIDTH :
+          PUZZLEYAP.HEIGHT,
+        bigRadius = aux - bitWise(aux * 0.15),
+        gradient = PUZZLEYAP.ctx.createRadialGradient(PUZZLEYAP.Helpers.HALFWIDTH,
+          PUZZLEYAP.Helpers.HALFHEIGHT, 10, PUZZLEYAP.Helpers.HALFWIDTH,
+          PUZZLEYAP.Helpers.HALFHEIGHT, bigRadius);
+
+      gradient.addColorStop(0.055, '#33ff89');
+      gradient.addColorStop(1.000, '#27b57a');
+
+      PUZZLEYAP.ctx.fillStyle = gradient;
+      PUZZLEYAP.ctx.fillRect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.HEIGHT);
+    },
+
+    title: function (label, size) {
+      var title = label,
+        textX = PUZZLEYAP.Helpers.HALFWIDTH,
+        textY = bitWise(PUZZLEYAP.Helpers.HALFHEIGHT / 4),
+        textSize;
+
+      if (size) {
+        textSize = PUZZLEYAP.Helpers.getProperFont(size);
+      } else {
+        textSize = PUZZLEYAP.Helpers.getProperFont(80);
+      }
+
+      PUZZLEYAP.ctx.textBaseline = "middle";
+      PUZZLEYAP.ctx.textAlign = "center";
+
+      PUZZLEYAP.ctx.font = textSize + 'px arial black';
+      PUZZLEYAP.ctx.lineWidth = 2;
+      PUZZLEYAP.ctx.strokeStyle = '#063c10';
+
+      PUZZLEYAP.ctx.fillStyle = '#69efac';
+      PUZZLEYAP.ctx.fillText(title, textX, textY);
+      PUZZLEYAP.ctx.strokeText(title, textX, textY);
+    },
+
+    topBar: function () {
+//      var radius = 10;
+//
+//      PUZZLEYAP.ctx.beginPath();
+//        PUZZLEYAP.ctx.moveTo(0, 0);
+//        PUZZLEYAP.ctx.lineTo(PUZZLEYAP.WIDTH, 0);
+//        PUZZLEYAP.ctx.lineTo(PUZZLEYAP.WIDTH, PUZZLEYAP.Helpers.topBarHeight - radius);
+//        PUZZLEYAP.ctx.quadraticCurveTo(PUZZLEYAP.WIDTH, PUZZLEYAP.Helpers.topBarHeight,
+//            PUZZLEYAP.WIDTH - radius, PUZZLEYAP.Helpers.topBarHeight);
+//        PUZZLEYAP.ctx.lineTo(radius, PUZZLEYAP.Helpers.topBarHeight);
+//        PUZZLEYAP.ctx.quadraticCurveTo(0, PUZZLEYAP.Helpers.topBarHeight,
+//            0, PUZZLEYAP.Helpers.topBarHeight - radius);
+//      PUZZLEYAP.ctx.closePath();
+
+
+      PUZZLEYAP.ctx.fillStyle = "#9d8f8f";
+      PUZZLEYAP.ctx.fillRect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.Helpers.topBarHeight);
+    },
+
+    button: function (x, y, w, h, label, color) {
+
+      var radius = 10,
+        r = x + w,
+        b = y + h,
+        fontSize = PUZZLEYAP.Helpers.getProperFont(35),
+        textX = bitWise(x + w / 2),
+        textY = bitWise(y + h / 2);
+
+      // Rectángulo redondeado
+      PUZZLEYAP.ctx.beginPath();
+      PUZZLEYAP.ctx.strokeStyle = '#063c10';
+      PUZZLEYAP.ctx.lineWidth = "2";
+      PUZZLEYAP.ctx.fillStyle = color;
+      PUZZLEYAP.ctx.moveTo(x + radius, y);
+      PUZZLEYAP.ctx.lineTo(r - radius, y);
+      PUZZLEYAP.ctx.quadraticCurveTo(r, y, r, y + radius);
+      PUZZLEYAP.ctx.lineTo(r, y + h - radius);
+      PUZZLEYAP.ctx.quadraticCurveTo(r, b, r - radius, b);
+      PUZZLEYAP.ctx.lineTo(x + radius, b);
+      PUZZLEYAP.ctx.quadraticCurveTo(x, b, x, b - radius);
+      PUZZLEYAP.ctx.lineTo(x, y + radius);
+      PUZZLEYAP.ctx.quadraticCurveTo(x, y, x + radius, y);
+
+      // Rellenar botón
+      PUZZLEYAP.ctx.fillStyle = color;
+      PUZZLEYAP.ctx.fill();
+
+      // Las siguientes lineas antes del stroke se requieren en Chrome
+      PUZZLEYAP.ctx.shadowBlur = 0;
+      PUZZLEYAP.ctx.shadowOffsetX = 0;
+      PUZZLEYAP.ctx.shadowOffsetY = 0;
+      PUZZLEYAP.ctx.stroke();
+
+      // Etiqueta del boton
+      PUZZLEYAP.ctx.beginPath();
+      PUZZLEYAP.ctx.font = fontSize + "px Arial";
+      PUZZLEYAP.ctx.fillStyle = "#063c10";
+      PUZZLEYAP.ctx.textBaseline = "middle";
+      PUZZLEYAP.ctx.textAlign = "center";
+      PUZZLEYAP.ctx.fillText(label, textX, textY);
+    },
+
+
     clear: function () {
       PUZZLEYAP.ctx.clearRect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.HEIGHT);
-      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.HEIGHT, "#33ff89");
+      PUZZLEYAP.Draw.background();
     },
 
     rect: function (x, y, width, height, color, border) {
@@ -444,18 +589,6 @@
         x2,
         y2;
 
-      // Nota: Esto pinta la cuadrícula entera
-      //for (i = 0; i <= board.totalColumns; i += 1) {
-      //  x2 = blockWidth * i + x;
-      //  PUZZLEYAP.ctx.moveTo(x2, y);
-      //  PUZZLEYAP.ctx.lineTo(x2, height + y);
-      //}
-      //for (i = 0; i <= board.totalRows; i += 1) {
-      //  y2 = blockHeight * i + y;
-      //  PUZZLEYAP.ctx.moveTo(x, y2);
-      //  PUZZLEYAP.ctx.lineTo(width + x, y2);
-      //}
-
       // Dibuja el borde del tablero del puzzle
       PUZZLEYAP.ctx.moveTo(x, y);
       PUZZLEYAP.ctx.lineTo(x + width, y);
@@ -512,7 +645,7 @@
   };
 
   // Clase de botones para el juego
-  PUZZLEYAP.UIObject.Button = function (text, x, y, width, height) {
+  PUZZLEYAP.UIObject.Button = function (text, x, y, width, height, color) {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -520,6 +653,14 @@
     this.touched = false;
     this.hovered = false;
     this.text = text;
+    if (color) {
+      this.color = color;
+      this.highlight = PUZZLEYAP.Helpers.shade(color, 0.5);
+    } else {
+      this.color = '#ffd959';
+      this.highlight = '#ffecac';
+    }
+
   };
 
   PUZZLEYAP.UIObject.Button.prototype = _.extend(PUZZLEYAP.UIObject.Button.prototype,
@@ -537,31 +678,19 @@
     }
   };
 
+
   PUZZLEYAP.UIObject.Button.prototype.unsetHandler = function () {
     this.handler = null;
   };
 
   PUZZLEYAP.UIObject.Button.prototype.draw = function () {
     if (this.hovered) {
-      PUZZLEYAP.Draw.rect(this.x, this.y, this.width, this.height, "#e2e258", true);
+      PUZZLEYAP.Draw.button(this.x, this.y, this.width, this.height,
+          this.text, this.highlight);
     } else {
-      PUZZLEYAP.Draw.rect(this.x, this.y, this.width, this.height, "yellow", true);
+      PUZZLEYAP.Draw.button(this.x, this.y, this.width, this.height,
+          this.text, this.color);
     }
-
-    //text options
-    var fontSize = PUZZLEYAP.Helpers.getProperFont(22),
-      textX,
-      textY,
-      textSize;
-
-    //text position
-    PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-    textSize = bitWise(PUZZLEYAP.ctx.measureText(this.text).width / 2);
-    textX = this.x + bitWise(this.width / 2) - textSize;
-    textY = this.y + bitWise(this.height / 2) + bitWise(fontSize / 4);
-
-    //draw the text
-    PUZZLEYAP.Draw.text(this.text, textX, textY, fontSize, "black");
   };
 
   PUZZLEYAP.buttonSettings = {
@@ -577,40 +706,33 @@
 
   // Pantalla de menú principal
   PUZZLEYAP.MainMenuState = function () {
-    var stateElements = [],
-      name = "PuzzleYap";
+    var stateElements = [];
 
     this.onEnter = function () {
       console.log("Entrando en: MainMenuState");
-      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
-        buttonY = bitWise(buttonSpace / 2),
-        fontSize = PUZZLEYAP.Helpers.getProperFont(75),
-        textWidth,
-        textX,
+      var buttonY = bitWise(PUZZLEYAP.HEIGHT / 8),
+        halfButtonHeight = bitWise(PUZZLEYAP.buttonSettings.height / 2),
         aboutMenuButton,
         playMenuButton,
         exitMenuButton;
 
       // Dibuja el título del estado
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = PUZZLEYAP.ctx.measureText(name).width;
-      textX = bitWise(PUZZLEYAP.Helpers.HALFWIDTH - textWidth / 2);
-      PUZZLEYAP.Draw.text(name, textX, buttonY + fontSize / 2, fontSize, "black");
+      PUZZLEYAP.Draw.title("PuzzleYap");
 
       // Crea los botones del menú
       playMenuButton = new PUZZLEYAP.UIObject.Button("Jugar",
          PUZZLEYAP.buttonSettings.x,
-         bitWise(buttonY + buttonSpace - PUZZLEYAP.buttonSettings.height / 2),
+         bitWise(3 * buttonY - halfButtonHeight),
          PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       aboutMenuButton = new PUZZLEYAP.UIObject.Button("Acerca de",
         PUZZLEYAP.buttonSettings.x,
-        bitWise(buttonY + 2 * buttonSpace - PUZZLEYAP.buttonSettings.height / 2),
+        bitWise(5 * buttonY - halfButtonHeight),
         PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       exitMenuButton = new PUZZLEYAP.UIObject.Button("Salir",
         PUZZLEYAP.buttonSettings.x,
-        bitWise(buttonY + 3 * buttonSpace - PUZZLEYAP.buttonSettings.height / 2),
+        bitWise(7 * buttonY - halfButtonHeight),
         PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       // Handlers de los botones
@@ -674,35 +796,38 @@
 
     this.onEnter = function () {
       console.log("Entrando en: AboutState");
-      var buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
+      var buttonY = bitWise(PUZZLEYAP.HEIGHT / 8),
+        halfButtonHeight = bitWise(PUZZLEYAP.buttonSettings.height / 2),
+        buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
         halfWidth = PUZZLEYAP.Helpers.HALFWIDTH,
-        buttonY = bitWise(buttonSpace / 2),
-        fontSize = PUZZLEYAP.Helpers.getProperFont(35),
+        fontSize = PUZZLEYAP.Helpers.getProperFont(50),
         madeBy = "Hecho por",
         author = "David Hernández Bethencourt",
-        imageSize = bitWise(PUZZLEYAP.buttonSettings.width / 2),
+        imageSize = bitWise(PUZZLEYAP.WIDTH <= PUZZLEYAP.HEIGHT ? PUZZLEYAP.WIDTH / 4 :
+            PUZZLEYAP.HEIGHT / 4),
         imageX = halfWidth - bitWise(imageSize / 2),
         imageY = bitWise(buttonY + 1.8 * buttonSpace - imageSize / 2),
         textWidth,
-        textX,
+        textX = PUZZLEYAP.Helpers.HALFWIDTH,
         backMenuButton,
         img;
 
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
-      textX = halfWidth - textWidth;
-      PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
+      PUZZLEYAP.Draw.title("Acerca de");
 
-      fontSize = PUZZLEYAP.Helpers.getProperFont(30);
+      PUZZLEYAP.ctx.lineWidth = 2;
+      PUZZLEYAP.ctx.strokeStyle = '#063c10';
+
+      PUZZLEYAP.ctx.fillStyle = "#bcb8b8";
+
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(madeBy).width / 2);
-      textX = halfWidth - textWidth;
-      PUZZLEYAP.Draw.text(madeBy, textX, buttonY * 2, fontSize, "grey");
+      //PUZZLEYAP.Draw.text(madeBy, textX, buttonY * 2, fontSize, "grey");
+      PUZZLEYAP.ctx.fillText(madeBy, textX, buttonY * 2);
+      PUZZLEYAP.ctx.strokeText(madeBy, textX, buttonY * 2);
 
       fontSize = PUZZLEYAP.Helpers.getProperFont(25);
       PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
       textWidth = bitWise(PUZZLEYAP.ctx.measureText(author).width / 2);
-      textX = halfWidth - textWidth;
+      textX = halfWidth;
       PUZZLEYAP.Draw.text(author, textX, bitWise(buttonY * 2.8), fontSize, "blue");
 
       authorImage.onload = function () {
@@ -751,7 +876,6 @@
 
   PUZZLEYAP.CaptureImageState = function () {
     var stateElements = [],
-      name = "Capturar imagen",
       halfHeight = PUZZLEYAP.Helpers.HALFHEIGHT,
       halfWidth = PUZZLEYAP.Helpers.HALFWIDTH;
 
@@ -766,13 +890,7 @@
         readyMenuButton,
         img;
 
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
-      textX = halfWidth - textWidth;
-      PUZZLEYAP.Draw.text(name, textX, buttonY, fontSize, "black");
-
-      //PUZZLEYAP.cameraImage.width = PUZZLEYAP.buttonSettings.width;
-      //PUZZLEYAP.cameraImage.height = halfHeight;
+      PUZZLEYAP.Draw.title("Capturar imagen", 50);
       PUZZLEYAP.cameraImage.x = PUZZLEYAP.buttonSettings.x;
       PUZZLEYAP.cameraImage.y = bitWise(halfHeight - PUZZLEYAP.cameraImage.height / 2);
 
@@ -857,41 +975,42 @@
 
     this.onEnter = function () {
       console.log("Entrando en: DifficultySelectionState");
-      var name = "Seleccionar dificultad",
-        buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
-        buttonY = bitWise(buttonSpace / 2),
-        fontSize = PUZZLEYAP.Helpers.getProperFont(35),
-        topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
-        textWidth,
-        textX,
-        textY,
+      var buttonY = bitWise(PUZZLEYAP.HEIGHT / 8),
+        halfButtonHeight = bitWise(PUZZLEYAP.buttonSettings.height / 2),
+        fontSize = PUZZLEYAP.Helpers.getProperFont(60),
+        textY = bitWise(PUZZLEYAP.Helpers.topBarHeight / 4),
         easyMenuButton,
         mediumMenuButton,
         hardMenuButton;
 
 
-      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, topBarHeight, "#9d8f8f");
+      PUZZLEYAP.Draw.topBar();
 
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
-      textX = PUZZLEYAP.Helpers.HALFWIDTH - textWidth;
-      textY = bitWise(topBarHeight / 2 + fontSize / 4);
-      PUZZLEYAP.Draw.text(name, textX, textY, fontSize, "#fff");
+      PUZZLEYAP.ctx.font = fontSize + 'px arial';
+      PUZZLEYAP.ctx.lineWidth = 1;
+      PUZZLEYAP.ctx.strokeStyle = '#6c6666';
+
+      PUZZLEYAP.ctx.fillStyle = '#fff';
+      PUZZLEYAP.ctx.fillText("Seleccionar", PUZZLEYAP.Helpers.HALFWIDTH, textY);
+      PUZZLEYAP.ctx.strokeText("Seleccionar", PUZZLEYAP.Helpers.HALFWIDTH, textY);
+
+      PUZZLEYAP.ctx.fillText("Dificultad", PUZZLEYAP.Helpers.HALFWIDTH, textY * 3);
+      PUZZLEYAP.ctx.strokeText("Dificultad", PUZZLEYAP.Helpers.HALFWIDTH, textY * 3);
 
       // MENU BUTTOMS
       easyMenuButton = new PUZZLEYAP.UIObject.Button("Fácil",
           PUZZLEYAP.buttonSettings.x,
-          buttonY + buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+           3 * buttonY - halfButtonHeight,
           PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       mediumMenuButton = new PUZZLEYAP.UIObject.Button("Media",
           PUZZLEYAP.buttonSettings.x,
-          buttonY + 2 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          5 * buttonY - halfButtonHeight,
           PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       hardMenuButton = new PUZZLEYAP.UIObject.Button("Dificil",
           PUZZLEYAP.buttonSettings.x,
-          buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
+          7 * buttonY - halfButtonHeight,
           PUZZLEYAP.buttonSettings.width, PUZZLEYAP.buttonSettings.height);
 
       // MENU HANDLERS
@@ -1380,7 +1499,6 @@
     },
     drawDispersePieces: function () {
       var text = "¡DISPERSANDO PUZZLE!",
-        text2 = "¡AGITA EL DISPOSITIVO!",
         titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
         halfTopBarHeight = bitWise(PUZZLEYAP.Helpers.topBarHeight / 2),
         pieceNumbers = this.disperseList.length,
@@ -1395,7 +1513,7 @@
       PUZZLEYAP.ctx.globalAlpha = 1;
       PUZZLEYAP.ctx.font = "bold " + titleFontSize + "px Monospace";
       textWidth = bitWise(PUZZLEYAP.ctx.measureText(text).width / 2);
-      textX = PUZZLEYAP.Helpers.HALFWIDTH - textWidth;
+      textX = PUZZLEYAP.Helpers.HALFWIDTH;
       PUZZLEYAP.Draw.text(text, textX,
           halfTopBarHeight + bitWise(titleFontSize / 4), titleFontSize, "#4dc9ff");
 
@@ -1485,12 +1603,9 @@
       if (shakeEvent) {
         console.log("Device Motion Disponible");
         console.log('Agregar listener DeviceMotionEvent');
-        window.addEventListener('devicemotion', setGravityInput, false);
 
-        textWidth = bitWise(PUZZLEYAP.ctx.measureText(topText).width / 2);
-        textX = halfWidth - textWidth;
-        PUZZLEYAP.Draw.text(topText, textX,
-            halfTopBarHeight + bitWise(fontSize / 4), fontSize, "#fff");
+        PUZZLEYAP.Draw.text(topText, halfWidth,
+              halfTopBarHeight + bitWise(fontSize / 4), fontSize, "#fff");
 
         PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, PUZZLEYAP.buttonSettings.x,
             PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width,
@@ -1498,42 +1613,51 @@
             topBarHeight + verticalMargin, PUZZLEYAP.cameraImage.width,
             PUZZLEYAP.cameraImage.height);
 
-        // Manejar DeviceMotion
-        //http://stackoverflow.com/questions/4475219/detect-a-shake-in-ios-safari-with-javascript
-        intervalID = setInterval(function () {
-          var change = Math.abs(PUZZLEYAP.GravityInput.x - lastX +
-              PUZZLEYAP.GravityInput.y - lastY + PUZZLEYAP.GravityInput.z - lastZ);
+        if (!PUZZLEYAP.iOS) {
+          window.addEventListener('devicemotion', setGravityInput, false);
 
-          if (change > PUZZLEYAP.sensitivity) {
-            console.log('¡El dispositivo ha sido agitado!');
-            console.log('Fuerza del agite:' + change);
-            clearInterval(intervalID);
+          // Manejar DeviceMotion
+          //http://stackoverflow.com/questions/4475219/detect-a-shake-in-ios-safari-with-javascript
+          intervalID = setInterval(function () {
+            var change = Math.abs(PUZZLEYAP.GravityInput.x - lastX +
+                PUZZLEYAP.GravityInput.y - lastY + PUZZLEYAP.GravityInput.z - lastZ);
 
-            console.log('Elimnar listener para DeviceMotionEvent');
-            window.removeEventListener('devicemotion', setGravityInput, false);
+            if (change > PUZZLEYAP.sensitivity) {
+              console.log('¡El dispositivo ha sido agitado!');
+              console.log('Fuerza del agite:' + change);
+              clearInterval(intervalID);
+
+              console.log('Elimnar listener para DeviceMotionEvent');
+              window.removeEventListener('devicemotion', setGravityInput, false);
+              dispersionActivated = true;
+            }
+
+            // Update new position
+            lastX = PUZZLEYAP.GravityInput.x;
+            lastY = PUZZLEYAP.GravityInput.y;
+            lastZ = PUZZLEYAP.GravityInput.z;
+          }, 500);
+
+          setTimeout(function () {
+            var x = PUZZLEYAP.GravityInput.x,
+              y = PUZZLEYAP.GravityInput.y,
+              z = PUZZLEYAP.GravityInput.z;
+            if (x + y + z === 0) {
+              console.log('El dispositivo dice que soporta Motion, pero no es así.');
+              console.log('Iniciando manualmente el agite...');
+              clearInterval(intervalID);
+
+              console.log('Elimnar listener para DeviceMotionEvent');
+              window.removeEventListener('devicemotion', setGravityInput, false);
+              dispersionActivated = true;
+            }
+          }, 3000);
+        } else {
+          setTimeout(function () {
             dispersionActivated = true;
-          }
+          }, 3000);
+        }
 
-          // Update new position
-          lastX = PUZZLEYAP.GravityInput.x;
-          lastY = PUZZLEYAP.GravityInput.y;
-          lastZ = PUZZLEYAP.GravityInput.z;
-        }, 150);
-
-        setTimeout(function () {
-          var x = PUZZLEYAP.GravityInput.x,
-            y = PUZZLEYAP.GravityInput.y,
-            z = PUZZLEYAP.GravityInput.z;
-          if (x + y + z === 0) {
-            console.log('El dispositivo dice que soporta Motion, pero no es así.');
-            console.log('Iniciando manualmente el agite...');
-            clearInterval(intervalID);
-
-            console.log('Elimnar listener para DeviceMotionEvent');
-            window.removeEventListener('devicemotion', setGravityInput, false);
-            dispersionActivated = true;
-          }
-        }, 3000);
 
       } else {
         console.log("Device Motion NO Disponible");
@@ -1580,11 +1704,9 @@
       minCounter = 0,
       hourCounter = 0,
       text = 'Tiempo: 00:00:00',
-      fontSize = PUZZLEYAP.Helpers.getProperFont(15),
+      fontSize = PUZZLEYAP.Helpers.getProperFont(20),
       rightTopBarMargin = PUZZLEYAP.WIDTH - PUZZLEYAP.Helpers.leftTopBarMargin,
-      thirdTopBarHeight = bitWise(PUZZLEYAP.Helpers.topBarHeight / 3),
-      textY = bitWise(PUZZLEYAP.Helpers.topBarHeight - thirdTopBarHeight / 2 +
-          fontSize / 4),
+      textY = 3 * bitWise(PUZZLEYAP.Helpers.topBarHeight / 4),
       textX,
       textWidth,
       crono,
@@ -1605,8 +1727,11 @@
       hour = (hourCounter < 10) ? '0' + hourCounter : hourCounter;
       temp = 'Tiempo: ' + hour + ':' + min + ':' + sec;
 
+      PUZZLEYAP.ctx.textBaseline = "hanging";
       PUZZLEYAP.ctx.font = fontSize + "px Monospace";
       PUZZLEYAP.Draw.text(temp, textX, textY, fontSize, "#fff");
+      PUZZLEYAP.ctx.textAlign = "center";
+      PUZZLEYAP.ctx.textBaseline = "middle";
     };
 
     this.setCounter = function () {
@@ -1685,10 +1810,9 @@
       thirdTopBarHeight = bitWise(PUZZLEYAP.Helpers.topBarHeight / 3),
       leftTopBarMargin = bitWise(PUZZLEYAP.WIDTH / 16),
       rightTopBarMargin = PUZZLEYAP.WIDTH - leftTopBarMargin,
-      titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
-      subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(15),
-      subtitleTextY = bitWise(PUZZLEYAP.Helpers.topBarHeight - thirdTopBarHeight / 2 +
-          subtitleFontSize / 4),
+      titleFontSize = PUZZLEYAP.Helpers.getProperFont(40),
+      subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(20),
+      subtitleTextY = 3 * bitWise(PUZZLEYAP.Helpers.topBarHeight / 4),
       halfTextWidth,
       dispersingPieces = true,
       timer;
@@ -1723,16 +1847,19 @@
 
     this.render = function () {
       PUZZLEYAP.Draw.clear();
-      PUZZLEYAP.Draw.rect(0, 0, PUZZLEYAP.WIDTH, PUZZLEYAP.Helpers.topBarHeight, "#9d8f8f");
+      PUZZLEYAP.Draw.topBar();
 
       PUZZLEYAP.ctx.font = "bold " + titleFontSize + "px Monospace";
       halfTextWidth = bitWise(PUZZLEYAP.ctx.measureText(name).width / 2);
-      PUZZLEYAP.Draw.text(name, PUZZLEYAP.Helpers.HALFWIDTH - halfTextWidth,
+      PUZZLEYAP.Draw.text(name, PUZZLEYAP.Helpers.HALFWIDTH,
           thirdTopBarHeight + bitWise(titleFontSize / 4), titleFontSize, "#fff");
 
+      PUZZLEYAP.ctx.textAlign = "start";
       PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
+      PUZZLEYAP.ctx.textBaseline = "hanging";
       PUZZLEYAP.Draw.text('Movimientos: ' + PUZZLEYAP.Jigsaw.movements, leftTopBarMargin,
           subtitleTextY, subtitleFontSize, "#fff");
+      PUZZLEYAP.ctx.textBaseline = "middle";
 
       _.each(stateElements, function (element) {
         element.draw();
@@ -1758,7 +1885,7 @@
 
   PUZZLEYAP.FinishState = function (timer) {
     var stateElements = [],
-      topBarHeight = bitWise(PUZZLEYAP.HEIGHT / 8),
+      topBarHeight = PUZZLEYAP.Helpers.topBarHeight,
       verticalMargin = bitWise(PUZZLEYAP.HEIGHT / 16),
       step,
       swirlAnimationID;
@@ -1865,14 +1992,15 @@
       var halfWidth = PUZZLEYAP.Helpers.HALFWIDTH,
         congratsText = "¡Enhorabuena!",
         congratsText2 = "Has ganado con " + PUZZLEYAP.Jigsaw.movements +
-            " movimientos en " + timer.timeString(),
+            " movimientos",
+        congratsText3 = "Has tardado " + timer.timeString(),
         actionText = "¿Qué desea hacer?",
         thirdTopBarHeight = bitWise(topBarHeight / 3),
         buttonSpace = PUZZLEYAP.buttonSettings.buttonSpace(3),
         buttonY = bitWise(buttonSpace / 2),
         fontSize = PUZZLEYAP.Helpers.getProperFont(24),
         titleFontSize = PUZZLEYAP.Helpers.getProperFont(35),
-        subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(12),
+        subtitleFontSize = PUZZLEYAP.Helpers.getProperFont(20),
         textY = bitWise(topBarHeight / 2 + fontSize / 4),
         subtitleTextY = bitWise(topBarHeight - thirdTopBarHeight / 2 +
             subtitleFontSize / 4),
@@ -1887,15 +2015,15 @@
 
       PUZZLEYAP.ctx.globalAlpha = 1;
       PUZZLEYAP.ctx.font = "bold " + titleFontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(congratsText).width / 2);
-      textX = halfWidth - textWidth;
+      textX = halfWidth;
       PUZZLEYAP.Draw.text(congratsText, textX,
-          thirdTopBarHeight + bitWise(titleFontSize / 4), titleFontSize, "#fff");
+          bitWise(topBarHeight / 4), titleFontSize, "#4dc9ff");
 
       PUZZLEYAP.ctx.font = subtitleFontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(congratsText2).width / 2);
-      textX = halfWidth - textWidth;
-      PUZZLEYAP.Draw.text(congratsText2, textX, subtitleTextY, subtitleFontSize, "#fff");
+      PUZZLEYAP.Draw.text(congratsText2, textX, bitWise(topBarHeight / 8 * 5),
+          subtitleFontSize, "#fff");
+      PUZZLEYAP.Draw.text(congratsText3, textX, bitWise(topBarHeight / 8 * 7),
+          subtitleFontSize, "#fff");
 
       PUZZLEYAP.ctx.drawImage(PUZZLEYAP.cameraImage.img, PUZZLEYAP.buttonSettings.x,
           PUZZLEYAP.cameraImage.y, PUZZLEYAP.cameraImage.width,
@@ -1911,20 +2039,13 @@
         swirlAnimated(imgData);
       }
 
-
-      PUZZLEYAP.ctx.font = "bold " + fontSize + "px Monospace";
-      textWidth = bitWise(PUZZLEYAP.ctx.measureText(actionText).width / 2);
-      textX = halfWidth - textWidth;
-      textY = buttonY + 3 * buttonSpace - PUZZLEYAP.buttonSettings.height;
-      PUZZLEYAP.Draw.text(actionText, textX, textY, fontSize, "#fff");
-
       // MENU BUTTOMS
-      readyMenuButton = new PUZZLEYAP.UIObject.Button("Jugar otra",
+      readyMenuButton = new PUZZLEYAP.UIObject.Button("Otra",
           PUZZLEYAP.buttonSettings.x + bitWise(PUZZLEYAP.buttonSettings.width / 2),
           buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
           bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
 
-      backMenuButton = new PUZZLEYAP.UIObject.Button("Ir al Menú",
+      backMenuButton = new PUZZLEYAP.UIObject.Button("Menú",
           PUZZLEYAP.buttonSettings.x,
           buttonY + 3 * buttonSpace - bitWise(PUZZLEYAP.buttonSettings.height / 2),
           bitWise(PUZZLEYAP.buttonSettings.width / 2), PUZZLEYAP.buttonSettings.height);
